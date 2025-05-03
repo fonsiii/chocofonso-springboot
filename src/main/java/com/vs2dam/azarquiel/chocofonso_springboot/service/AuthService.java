@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
 public class AuthService {
 
@@ -23,6 +25,7 @@ public class AuthService {
     @Autowired
     private JwtTokenUtil jwtTokenUtil;
 
+    @Transactional  // Make sure the update happens in a transaction
     public LoginResult authenticateUser(LoginDTO loginDTO) {
         // Buscar usuario por correo
         User user = userRepository.findByEmail(loginDTO.getEmail()).orElse(null);
@@ -41,7 +44,7 @@ public class AuthService {
         }
 
         // Actualizar el último inicio de sesión
-        user.setLastLogin(LocalDateTime.now());  // Establecer la fecha y hora actual
+        user.updateLastLogin();  // Establecer la fecha y hora actual
         userRepository.save(user);  // Guardar el usuario con la fecha de último inicio de sesión actualizada
 
         // Generar JWT

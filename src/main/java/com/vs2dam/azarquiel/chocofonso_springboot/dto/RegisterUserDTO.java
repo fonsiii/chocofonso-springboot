@@ -20,6 +20,6 @@ public class RegisterUserDTO {
     @NotBlank
     private String lastName;
 
-    @Pattern(regexp = "^\\+?[0-9]{9,15}$", message = "Invalid phone number")
+    @Pattern(regexp = "^[0-9]{9}$", message = "El número de teléfono debe tener exactamente 9 dígitos")
     private String phoneNumber;
 }

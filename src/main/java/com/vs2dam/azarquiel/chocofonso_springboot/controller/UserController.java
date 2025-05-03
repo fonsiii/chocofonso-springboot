@@ -28,9 +28,14 @@ public class UserController {
 
     // Método POST de registro (ahora delega la lógica al UserService)
     @PostMapping("/users/register")
-    public ResponseEntity<UserResponseDTO> register(@Valid @RequestBody RegisterUserDTO dto) {
-        User savedUser = userService.registerUser(dto); // Llamada al servicio
-        return ResponseEntity.ok(UserMapper.toResponse(savedUser));
+
+    public ResponseEntity<String> registerUser(@RequestBody RegisterUserDTO registerUserDTO) {
+        try {
+            userService.registerUser(registerUserDTO);
+            return ResponseEntity.ok("Usuario registrado exitosamente.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());  // Retorna el mensaje de error
+        }
     }
 
     // Método GET para obtener un usuario por su ID

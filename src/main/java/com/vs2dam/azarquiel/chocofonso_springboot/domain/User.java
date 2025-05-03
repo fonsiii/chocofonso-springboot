@@ -2,14 +2,21 @@ package com.vs2dam.azarquiel.chocofonso_springboot.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.DynamicUpdate;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @Entity
+@DynamicUpdate // Solo actualiza campos modificados
+@EntityListeners(AuditingEntityListener.class)
 @Table(name = "users")
 public class User {
 
@@ -20,7 +27,7 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(name = "password", nullable = false)
+    @Column(nullable = false)
     private String password;
 
     @Column(name = "first_name")
@@ -29,7 +36,7 @@ public class User {
     @Column(name = "last_name")
     private String lastName;
 
-    @Column(name = "phone_number")
+    @Column(unique = true, name = "phone_number")
     private String phoneNumber;
 
     @Column(name = "is_active")
@@ -45,7 +52,7 @@ public class User {
     @Column(name = "verification_token_expiry")
     private LocalDateTime verificationTokenExpiry;
 
-    @Column(name = "registration_date")
+    @Column(name = "registration_date", updatable = false)
     private LocalDateTime registrationDate;
 
     @Column(name = "last_login")
@@ -84,9 +91,29 @@ public class User {
     @Column(name = "password_reset_token_expiry")
     private LocalDateTime passwordResetTokenExpiry;
 
-    @Column(name = "created_at")
+    @CreatedDate
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private Set<Role> roles = new HashSet<>();
+
+
+    @PrePersist
+    public void prePersist() {
+        this.registrationDate = LocalDateTime.now();
+    }
+
+    // Solo actualizamos last_login cuando el usuario inicia sesión, y no actualizamos 'updated_at'
+    public void updateLastLogin() {
+        this.lastLogin = LocalDateTime.now();
+    }
 }
