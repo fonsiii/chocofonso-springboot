@@ -33,6 +33,7 @@ public class User {
     private String phoneNumber;
 
     @Column(name = "is_active")
+    @Builder.Default
     private boolean isActive = true;
 
     @Column(name = "email_verified")

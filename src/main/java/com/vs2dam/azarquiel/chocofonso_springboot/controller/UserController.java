@@ -2,6 +2,7 @@ package com.vs2dam.azarquiel.chocofonso_springboot.controller;
 
 import com.vs2dam.azarquiel.chocofonso_springboot.domain.User;
 import com.vs2dam.azarquiel.chocofonso_springboot.dto.LoginDTO;
+import com.vs2dam.azarquiel.chocofonso_springboot.dto.LoginResult;
 import com.vs2dam.azarquiel.chocofonso_springboot.dto.RegisterUserDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.dto.UserResponseDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.mapper.UserMapper;
@@ -17,7 +18,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/api")
 public class UserController {
 
     @Autowired
@@ -26,14 +27,14 @@ public class UserController {
     private AuthService authService; // Usar el servicio de autenticación
 
     // Método POST de registro (ahora delega la lógica al UserService)
-    @PostMapping("/register")
+    @PostMapping("/users/register")
     public ResponseEntity<UserResponseDTO> register(@Valid @RequestBody RegisterUserDTO dto) {
         User savedUser = userService.registerUser(dto); // Llamada al servicio
         return ResponseEntity.ok(UserMapper.toResponse(savedUser));
     }
 
     // Método GET para obtener un usuario por su ID
-    @GetMapping("/{id}")
+    @GetMapping("/users/{id}")
     public ResponseEntity<UserResponseDTO> getUserById(@PathVariable Long id) {
         User user = userService.getUserById(id); // Llamada al servicio
         if (user != null) {
@@ -44,7 +45,7 @@ public class UserController {
     }
 
     // Método GET para obtener todos los usuarios
-    @GetMapping("")
+    @GetMapping("/users")
     public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
         List<User> users = userService.getAllUsers(); // Llamada al servicio
         List<UserResponseDTO> userResponseDTOs = users.stream()
@@ -53,16 +54,20 @@ public class UserController {
         return ResponseEntity.ok(userResponseDTOs);
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginDTO loginDTO) {
-        boolean isAuthenticated = authService.authenticateUser(loginDTO);
+    @PostMapping("/users/login")
+    public ResponseEntity<LoginResult> login(@RequestBody LoginDTO loginDTO) {
+        // Llamar al servicio de autenticación
+        LoginResult result = authService.authenticateUser(loginDTO);
 
-        if (isAuthenticated) {
-            return ResponseEntity.ok("Login successful");
-        } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+        // Si la autenticación es exitosa, devolver un código 200 con el mensaje de éxito
+        if (result.isSuccess()) {
+            return ResponseEntity.ok(result);
         }
+
+        // Si no es exitosa, devolver un código 401 con el mensaje de error
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(result);
     }
+
 
 
 }

@@ -36,7 +36,27 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-api -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>0.11.5</version> <!-- Reemplaza con la versión que estés utilizando -->
+            <scope>compile</scope>
+        </dependency>
 
+        <!-- Implementación de jjwt (necesario para generar y verificar los JWT) -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>0.11.5</version>
+        </dependency>
+
+        <!-- Necesario para la serialización JSON si estás utilizando Jackson -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>0.11.5</version>
+        </dependency>
         <!-- Dependencia para crear APIs RESTful -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

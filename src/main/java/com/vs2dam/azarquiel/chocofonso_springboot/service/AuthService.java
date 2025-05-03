@@ -2,10 +2,14 @@ package com.vs2dam.azarquiel.chocofonso_springboot.service;
 
 import com.vs2dam.azarquiel.chocofonso_springboot.domain.User;
 import com.vs2dam.azarquiel.chocofonso_springboot.dto.LoginDTO;
+import com.vs2dam.azarquiel.chocofonso_springboot.dto.LoginResult;
 import com.vs2dam.azarquiel.chocofonso_springboot.repository.UserRepository;
+import com.vs2dam.azarquiel.chocofonso_springboot.security.JwtTokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 
 @Service
 public class AuthService {
@@ -16,16 +20,33 @@ public class AuthService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    public boolean authenticateUser(LoginDTO loginDTO) {
-        // Buscar el usuario por el email
+    @Autowired
+    private JwtTokenUtil jwtTokenUtil;
+
+    public LoginResult authenticateUser(LoginDTO loginDTO) {
+        // Buscar usuario por correo
         User user = userRepository.findByEmail(loginDTO.getEmail()).orElse(null);
 
-        if (user != null && passwordEncoder.matches(loginDTO.getPassword(), user.getPassword())) {
-            // Las credenciales coinciden
-            return true;
+        if (user == null) {
+            return new LoginResult(false, "El correo electrónico no está registrado.", null); // No hay token si el correo es incorrecto
         }
 
-        // Si el usuario no existe o las credenciales no coinciden
-        return false;
+        // Verificar la contraseña
+        if (!passwordEncoder.matches(loginDTO.getPassword(), user.getPassword())) {
+            return new LoginResult(false, "La contraseña es incorrecta.", null); // No hay token si la contraseña es incorrecta
+        }
+
+        if (!user.isActive()) {
+            return new LoginResult(false, "Tu cuenta está inactiva. Contacta con el administrador.", null); // No hay token si la cuenta está inactiva
+        }
+
+        // Actualizar el último inicio de sesión
+        user.setLastLogin(LocalDateTime.now());  // Establecer la fecha y hora actual
+        userRepository.save(user);  // Guardar el usuario con la fecha de último inicio de sesión actualizada
+
+        // Generar JWT
+        String token = jwtTokenUtil.generateToken(user);
+
+        return new LoginResult(true, "Inicio de sesión exitoso.", token); // Devuelve el token si la autenticación fue exitosa
     }
 }
