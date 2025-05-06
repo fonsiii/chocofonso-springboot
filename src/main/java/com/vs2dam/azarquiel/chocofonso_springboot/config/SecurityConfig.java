@@ -1,41 +1,47 @@
 package com.vs2dam.azarquiel.chocofonso_springboot.config;
 
+import com.vs2dam.azarquiel.chocofonso_springboot.security.JwtRequestFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
+    private final JwtRequestFilter jwtRequestFilter;
+
+    public SecurityConfig(JwtRequestFilter jwtRequestFilter) {
+        this.jwtRequestFilter = jwtRequestFilter;
+    }
+
     // Definir el encoder para contraseñas con Argon2
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new Argon2PasswordEncoder(
-                16, // Salt length
-                32, // Hash length
-                1 << 12,  // Parallelism
-                1 << 16, // Memory cost
-                3   // Iterations
+                16, 32, 1 << 12, 1 << 16, 3
         );
     }
 
-    // Configuración de seguridad, usando SecurityFilterChain
+    // Cadena de filtros de seguridad
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // Configuración de autorización
+                .csrf(csrf -> csrf.disable())
+                .cors(cors -> {}) // Usa la configuración de WebConfig
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
-                        .anyRequest().permitAll()  // Permitir todas las solicitudes sin autenticación
+                        .requestMatchers("/api/users/login", "/api/users/register").permitAll()
+                        .anyRequest().authenticated()
                 )
-                // Desactivar CSRF de forma adecuada para una API REST
-                .csrf(csrf -> csrf
-                        .disable() // Deshabilitar CSRF
-                );
+                .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

@@ -3,13 +3,16 @@ package com.vs2dam.azarquiel.chocofonso_springboot.service;
 import com.vs2dam.azarquiel.chocofonso_springboot.domain.Role;
 import com.vs2dam.azarquiel.chocofonso_springboot.domain.User;
 import com.vs2dam.azarquiel.chocofonso_springboot.dto.RegisterUserDTO;
+import com.vs2dam.azarquiel.chocofonso_springboot.dto.UpdateUserDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.mapper.UserMapper;
 import com.vs2dam.azarquiel.chocofonso_springboot.repository.RoleRepository;
 import com.vs2dam.azarquiel.chocofonso_springboot.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -54,12 +57,34 @@ public class UserService {
         return userRepository.save(user);
     }
 
-
+    // Método para obtener el usuario por ID
     public User getUserById(Long id) {
         return userRepository.findById(id).orElse(null);
     }
 
+    // Método para obtener todos los usuarios
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
+    public User updateUserByEmail(String email, UpdateUserDTO dto) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
+
+        user.setFirstName(dto.getFirstName());
+        user.setLastName(dto.getLastName());
+        user.setPhoneNumber(dto.getPhoneNumber());
+
+        user.setUpdatedAt(LocalDateTime.now()); // ✅ Aquí actualizas la fecha
+
+        return userRepository.save(user);
+    }
+
+
+    // Método para obtener el usuario por correo electrónico (username)
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ese correo: " + email));
+    }
+
+
 }

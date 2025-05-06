@@ -52,4 +52,19 @@ public class AuthService {
 
         return new LoginResult(true, "Inicio de sesión exitoso.", token); // Devuelve el token si la autenticación fue exitosa
     }
+
+    private void incrementFailedAttempts(User user) {
+        int failedAttempts = user.getFailedLoginAttempts();
+        failedAttempts++;
+        user.setFailedLoginAttempts(failedAttempts);
+
+        // Si alcanzamos el umbral de intentos fallidos, bloqueamos la cuenta
+        if (failedAttempts >= 5) {
+            user.setAccountLocked(true);  // Bloquea la cuenta
+            // También podrías establecer un campo para la fecha del último intento y permitir un desbloqueo después de cierto tiempo.
+        }
+
+        userRepository.save(user);
+    }
+
 }
