@@ -7,6 +7,7 @@ import com.vs2dam.azarquiel.chocofonso_springboot.dto.UpdateUserDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.mapper.UserMapper;
 import com.vs2dam.azarquiel.chocofonso_springboot.repository.RoleRepository;
 import com.vs2dam.azarquiel.chocofonso_springboot.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,6 +29,12 @@ public class UserService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    private static final int MAX_FAILED_ATTEMPTS = 5;
+
+    public int getMaxFailedAttempts() {
+        return MAX_FAILED_ATTEMPTS;
+    }
 
     public User registerUser(RegisterUserDTO registerUserDTO) throws Exception {
         // Verificar si el email ya está registrado
@@ -86,5 +93,49 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ese correo: " + email));
     }
 
+    @Transactional
+    public void incrementFailedLoginAttempts(String email) {
+        userRepository.findByEmail(email)
+                .ifPresent(user -> {
+                    user.setFailedLoginAttempts(user.getFailedLoginAttempts() + 1);
+                    userRepository.save(user);
+                });
+    }
+
+    @Transactional
+    public void resetFailedLoginAttempts(String email) {
+        userRepository.findByEmail(email)
+                .ifPresent(user -> {
+                    user.setFailedLoginAttempts(0);
+                    userRepository.save(user);
+                });
+    }
+
+    @Transactional
+    public void deactivateUser(String email) {
+        userRepository.findByEmail(email)
+                .ifPresent(user -> {
+                    user.setActive(false);
+                    userRepository.save(user);
+                });
+    }
+
+    @Transactional
+    public void activateUser(String email) {
+        userRepository.findByEmail(email)
+                .ifPresent(user -> {
+                    user.setActive(true);
+                    userRepository.save(user);
+                });
+    }
+
+    @Transactional
+    public void updateLastLogin(String email) {
+        userRepository.findByEmail(email)
+                .ifPresent(user -> {
+                    user.setLastLogin(LocalDateTime.now());
+                    userRepository.save(user);
+                });
+    }
 
 }

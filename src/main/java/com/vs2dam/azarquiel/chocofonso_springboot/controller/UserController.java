@@ -1,10 +1,11 @@
 package com.vs2dam.azarquiel.chocofonso_springboot.controller;
 
 import com.vs2dam.azarquiel.chocofonso_springboot.domain.User;
-import com.vs2dam.azarquiel.chocofonso_springboot.dto.*;
+import com.vs2dam.azarquiel.chocofonso_springboot.dto.RegisterUserDTO;
+import com.vs2dam.azarquiel.chocofonso_springboot.dto.UpdateUserDTO;
+import com.vs2dam.azarquiel.chocofonso_springboot.dto.UserResponseDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.mapper.UserMapper;
 import com.vs2dam.azarquiel.chocofonso_springboot.security.JwtTokenUtil;
-import com.vs2dam.azarquiel.chocofonso_springboot.service.AuthService;
 import com.vs2dam.azarquiel.chocofonso_springboot.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -12,12 +13,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -25,13 +23,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/users") // Cambiamos el RequestMapping a /api/users
 public class UserController {
 
     @Autowired
     private UserService userService;
-    @Autowired
-    private AuthService authService;
 
     @Autowired
     private JwtTokenUtil jwtTokenUtil;
@@ -45,7 +41,7 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "Usuario registrado exitosamente."),
             @ApiResponse(responseCode = "400", description = "Error en el registro del usuario.")
     })
-    @PostMapping("/users/register")
+    @PostMapping("/register") // Mantenemos /register aquí, ya que es una acción sobre los usuarios
     public ResponseEntity<UserResponseDTO> registerUser(@Valid @RequestBody RegisterUserDTO registerUserDTO) throws Exception {
         User user = userService.registerUser(registerUserDTO);
         return ResponseEntity.ok(UserMapper.toResponse(user));
@@ -60,7 +56,7 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "Usuario encontrado."),
             @ApiResponse(responseCode = "404", description = "Usuario no encontrado.")
     })
-    @GetMapping("/users/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<UserResponseDTO> getUserById(
             @Parameter(description = "ID del usuario a buscar") @PathVariable Long id
     ) {
@@ -78,7 +74,7 @@ public class UserController {
             description = "Este endpoint devuelve una lista de todos los usuarios registrados."
     )
     @ApiResponse(responseCode = "200", description = "Lista de usuarios obtenida exitosamente.")
-    @GetMapping("/users")
+    @GetMapping
     public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
         List<User> users = userService.getAllUsers();
         List<UserResponseDTO> userResponseDTOs = users.stream()
@@ -87,41 +83,12 @@ public class UserController {
         return ResponseEntity.ok(userResponseDTOs);
     }
 
-    // Método POST para iniciar sesión
-    @Operation(
-            summary = "Iniciar sesión de usuario",
-            description = "Este endpoint permite a un usuario iniciar sesión utilizando su nombre de usuario y contraseña."
-    )
-    @PostMapping("/users/login")
-    public ResponseEntity<?> login(@RequestBody LoginDTO loginDTO, HttpServletResponse response) {
-        LoginResult result = authService.authenticateUser(loginDTO);
-
-        if (result.isSuccess()) {
-            // Crear cookie con el token
-            Cookie cookie = new Cookie("token", result.getToken());
-            cookie.setHttpOnly(true);
-            cookie.setSecure(true); // true en producción con HTTPS
-            cookie.setPath("/");
-            cookie.setMaxAge(24 * 60 * 60); // 1 día
-
-            response.addCookie(cookie);
-
-            // Devolver solo mensaje, no el token
-            return ResponseEntity.ok(new LoginResult(true, "Inicio de sesión exitoso.", result.getToken()));
-        } else {
-            // Aquí se maneja el caso de intento fallido
-            // El mensaje ya viene con información detallada (ej. intentos fallidos alcanzados, etc.)
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(result);
-        }
-    }
-
-
     // Método GET para obtener el usuario actual
     @Operation(
             summary = "Obtener los datos del usuario autenticado",
             description = "Este endpoint permite obtener la información del usuario actualmente autenticado."
     )
-    @GetMapping("/users/me")
+    @GetMapping("/me")
     public ResponseEntity<UserResponseDTO> getCurrentUser(HttpServletRequest request) {
         String token = extractTokenFromCookie(request);
         if (token == null) {
@@ -140,29 +107,12 @@ public class UserController {
         }
     }
 
-    // Método POST para cerrar sesión
-    @Operation(
-            summary = "Cerrar sesión de usuario",
-            description = "Este endpoint permite a un usuario cerrar sesión y eliminar su token."
-    )
-    @PostMapping("/users/logout")
-    public ResponseEntity<?> logout(HttpServletResponse response) {
-        Cookie cookie = new Cookie("token", null);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(true);
-        cookie.setPath("/");
-        cookie.setMaxAge(0); // Expira inmediatamente
-
-        response.addCookie(cookie);
-        return ResponseEntity.ok("Logout exitoso.");
-    }
-
     // Método PUT para actualizar los datos del usuario actual
     @Operation(
             summary = "Actualizar los datos del usuario",
             description = "Este endpoint permite actualizar los datos del usuario autenticado."
     )
-    @PutMapping("/users/me")
+    @PutMapping("/me")
     public ResponseEntity<User> updateCurrentUser(
             @Valid @RequestBody UpdateUserDTO updateUserDTO,
             HttpServletRequest request // Usamos el HttpServletRequest para acceder a las cookies
@@ -174,7 +124,6 @@ public class UserController {
             return ResponseEntity.status(401).build(); // Unauthorized
         }
 
-
         // Extraer el email del token
         String email = jwtTokenUtil.getUsernameFromToken(token);
 
@@ -184,7 +133,7 @@ public class UserController {
         return ResponseEntity.ok(updatedUser);
     }
 
-    // Método para extraer el token del cookie
+    // Método para extraer el token del cookie (podrías mover esto a una clase de utilidad si se usa en varios lugares)
     private String extractTokenFromCookie(HttpServletRequest request) {
         if (request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {
@@ -197,5 +146,4 @@ public class UserController {
         System.out.println("No se encontró token en las cookies.");
         return null;
     }
-
 }

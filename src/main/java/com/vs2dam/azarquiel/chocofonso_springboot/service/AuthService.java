@@ -8,10 +8,9 @@ import com.vs2dam.azarquiel.chocofonso_springboot.security.JwtTokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
-
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 @Service
 public class AuthService {
@@ -25,46 +24,35 @@ public class AuthService {
     @Autowired
     private JwtTokenUtil jwtTokenUtil;
 
-    @Transactional  // Make sure the update happens in a transaction
+    @Autowired
+    private UserService userService;
+
+    @Transactional
     public LoginResult authenticateUser(LoginDTO loginDTO) {
-        // Buscar usuario por correo
-        User user = userRepository.findByEmail(loginDTO.getEmail()).orElse(null);
+        Optional<User> userOptional = userRepository.findByEmail(loginDTO.getEmail());
 
-        if (user == null) {
-            return new LoginResult(false, "El correo electrónico no está registrado.", null); // No hay token si el correo es incorrecto
+        if (userOptional.isEmpty()) {
+            return new LoginResult(false, "El correo electrónico no está registrado.", null);
         }
 
-        // Verificar la contraseña
-        if (!passwordEncoder.matches(loginDTO.getPassword(), user.getPassword())) {
-            return new LoginResult(false, "La contraseña es incorrecta.", null); // No hay token si la contraseña es incorrecta
-        }
+        User user = userOptional.get();
 
         if (!user.isActive()) {
-            return new LoginResult(false, "Tu cuenta está inactiva. Contacta con el administrador.", null); // No hay token si la cuenta está inactiva
+            return new LoginResult(false, "Tu cuenta está inactiva. Contacta con el administrador.", null);
         }
 
-        // Actualizar el último inicio de sesión
-        user.updateLastLogin();  // Establecer la fecha y hora actual
-        userRepository.save(user);  // Guardar el usuario con la fecha de último inicio de sesión actualizada
+        if (!passwordEncoder.matches(loginDTO.getPassword(), user.getPassword())) {
+            userService.incrementFailedLoginAttempts(user.getEmail());
+            if (user.getFailedLoginAttempts() >= userService.getMaxFailedAttempts()) {
+                userService.deactivateUser(user.getEmail());
+                return new LoginResult(false, "Demasiados intentos fallidos. Tu cuenta ha sido desactivada.", null);
+            }
+            return new LoginResult(false, "La contraseña es incorrecta. Intentos restantes: " + (userService.getMaxFailedAttempts() - user.getFailedLoginAttempts()), null);
+        }
 
-        // Generar JWT
+        userService.resetFailedLoginAttempts(user.getEmail());
+        userService.updateLastLogin(user.getEmail());
         String token = jwtTokenUtil.generateToken(user);
-
-        return new LoginResult(true, "Inicio de sesión exitoso.", token); // Devuelve el token si la autenticación fue exitosa
+        return new LoginResult(true, "Inicio de sesión exitoso.", token);
     }
-
-    private void incrementFailedAttempts(User user) {
-        int failedAttempts = user.getFailedLoginAttempts();
-        failedAttempts++;
-        user.setFailedLoginAttempts(failedAttempts);
-
-        // Si alcanzamos el umbral de intentos fallidos, bloqueamos la cuenta
-        if (failedAttempts >= 5) {
-            user.setAccountLocked(true);  // Bloquea la cuenta
-            // También podrías establecer un campo para la fecha del último intento y permitir un desbloqueo después de cierto tiempo.
-        }
-
-        userRepository.save(user);
-    }
-
 }

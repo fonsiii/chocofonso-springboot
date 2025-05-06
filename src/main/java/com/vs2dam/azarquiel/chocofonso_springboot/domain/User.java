@@ -39,9 +39,8 @@ public class User {
     @Column(unique = true, name = "phone_number")
     private String phoneNumber;
 
-    @Column(name = "is_active")
-    @Builder.Default
-    private boolean isActive = true;
+    @Column(name = "is_active", columnDefinition = "TINYINT(1) DEFAULT 1")
+    private boolean isActive = true; // Por defecto, el usuario está activo
 
     @Column(name = "email_verified")
     private boolean emailVerified = false;
@@ -76,8 +75,8 @@ public class User {
     @Column(name = "shipping_postal_code")
     private String shippingPostalCode;
 
-    @Column(name = "failed_login_attempts")
-    private Integer failedLoginAttempts;
+    @Column(name = "failed_login_attempts", columnDefinition = "INT DEFAULT 0")
+    private Integer failedLoginAttempts = 0;
 
     @Column(name = "lockout_until")
     private LocalDateTime lockoutUntil;
