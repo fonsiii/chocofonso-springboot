@@ -1,5 +1,6 @@
 package com.vs2dam.azarquiel.chocofonso_springboot.controller;
 
+import com.vs2dam.azarquiel.chocofonso_springboot.domain.Role;
 import com.vs2dam.azarquiel.chocofonso_springboot.dto.LoginDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.dto.LoginResult;
 import com.vs2dam.azarquiel.chocofonso_springboot.security.JwtTokenUtil;
@@ -14,6 +15,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -43,8 +47,8 @@ public class AuthController {
 
             response.addCookie(cookie);
 
-            // Devolver solo mensaje, no el token
-            return ResponseEntity.ok(new LoginResult(true, "Inicio de sesión exitoso.", result.getToken()));
+            // Devolver el LoginResult COMPLETO con el usuario y sus roles
+            return ResponseEntity.ok(result);
         } else {
             // Aquí se maneja el caso de intento fallido
             // El mensaje ya viene con información detallada (ej. intentos fallidos alcanzados, etc.)

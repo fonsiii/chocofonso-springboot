@@ -1,8 +1,11 @@
 package com.vs2dam.azarquiel.chocofonso_springboot.mapper;
 
+import com.vs2dam.azarquiel.chocofonso_springboot.domain.Role;
 import com.vs2dam.azarquiel.chocofonso_springboot.domain.User;
 import com.vs2dam.azarquiel.chocofonso_springboot.dto.RegisterUserDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.dto.UserResponseDTO;
+
+import java.util.stream.Collectors;
 
 public class UserMapper {
 
@@ -25,6 +28,18 @@ public class UserMapper {
         dto.setFirstName(user.getFirstName());
         dto.setLastName(user.getLastName());
         dto.setPhoneNumber(user.getPhoneNumber());
+        dto.setShippingAddress(user.getShippingAddress());
+        dto.setShippingCity(user.getShippingCity());
+        dto.setShippingPostalCode(user.getShippingPostalCode());
+        dto.setBillingAddress(user.getBillingAddress());
+        dto.setBillingCity(user.getBillingCity());
+        dto.setBillingPostalCode(user.getBillingPostalCode());
+        // Añade esta lógica para mapear los roles
+        if (user.getRoles() != null) {
+            dto.setRoles(user.getRoles().stream()
+                    .map(Role::getName)
+                    .collect(Collectors.toSet()));
+        }
         return dto;
     }
 }

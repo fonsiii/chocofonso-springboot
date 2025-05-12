@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class AuthService {
@@ -53,6 +54,7 @@ public class AuthService {
         userService.resetFailedLoginAttempts(user.getEmail());
         userService.updateLastLogin(user.getEmail());
         String token = jwtTokenUtil.generateToken(user);
-        return new LoginResult(true, "Inicio de sesión exitoso.", token);
+        // ¡Devuelve el User y sus roles aquí!
+        return new LoginResult(true, "Inicio de sesión exitoso.", token, user, user.getRoles().stream().map(r -> r.getName()).collect(Collectors.toSet()));
     }
 }
