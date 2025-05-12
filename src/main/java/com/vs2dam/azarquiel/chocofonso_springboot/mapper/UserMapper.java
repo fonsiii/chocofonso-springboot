@@ -34,6 +34,8 @@ public class UserMapper {
         dto.setBillingAddress(user.getBillingAddress());
         dto.setBillingCity(user.getBillingCity());
         dto.setBillingPostalCode(user.getBillingPostalCode());
+        dto.setRegistrationDate(user.getRegistrationDate());
+        dto.setActive(user.isActive());
         // Añade esta lógica para mapear los roles
         if (user.getRoles() != null) {
             dto.setRoles(user.getRoles().stream()

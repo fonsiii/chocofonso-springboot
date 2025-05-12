@@ -22,6 +22,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -209,6 +210,88 @@ public class UserController {
             }
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al actualizar la dirección.");
+        }
+    }
+
+    @Operation(
+            summary = "Actualizar los datos de un usuario por ID (Admin)",
+            description = "Este endpoint permite actualizar los datos de un usuario específico por su ID para administradores."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Datos del usuario actualizados exitosamente.",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = UserResponseDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Usuario no encontrado."),
+            @ApiResponse(responseCode = "400", description = "Error en la actualización de los datos del usuario.")
+    })
+    @PutMapping("/{id}")
+    public ResponseEntity<UserResponseDTO> updateUser(
+            @Parameter(description = "ID del usuario a actualizar") @PathVariable Long id,
+            @Valid @RequestBody UpdateUserDTO updateUserDTO
+    ) {
+        try {
+            User updatedUser = userService.updateUser(id, updateUserDTO);
+            return ResponseEntity.ok(UserMapper.toResponse(updatedUser));
+        } catch (RuntimeException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+        }
+    }
+
+    @Operation(
+            summary = "Banear un usuario por ID (Admin)",
+            description = "Este endpoint permite banear (desactivar) a un usuario específico por su ID para administradores."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Usuario baneado exitosamente.",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = UserResponseDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Usuario no encontrado.")
+    })
+    @PutMapping("/{id}/ban")
+    public ResponseEntity<UserResponseDTO> banUser(@PathVariable Long id) {
+        try {
+            userService.updateUserActive(id, false);
+            User bannedUser = userService.getUserById(id);
+            return ResponseEntity.ok(UserMapper.toResponse(bannedUser));
+        } catch (RuntimeException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+        }
+    }
+    @Operation(
+            summary = "Desbanear un usuario por ID (Admin)",
+            description = "Este endpoint permite desbanear (activar) a un usuario específico por su ID para administradores."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Usuario desbaneado exitosamente.",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = UserResponseDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Usuario no encontrado.")
+    })
+    @PutMapping("/{id}/unban")
+    public ResponseEntity<UserResponseDTO> unbanUser(@PathVariable Long id) {
+        try {
+            userService.updateUserActive(id, true);
+            User unbannedUser = userService.getUserById(id);
+            return ResponseEntity.ok(UserMapper.toResponse(unbannedUser));
+        } catch (RuntimeException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+        }
+    }
+    @Operation(
+            summary = "Eliminar un usuario por ID (Admin)",
+            description = "Este endpoint permite eliminar a un usuario específico por su ID para administradores."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Usuario eliminado exitosamente."),
+            @ApiResponse(responseCode = "404", description = "Usuario no encontrado.")
+    })
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+        try {
+            userService.deleteUser(id);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
         }
     }
 

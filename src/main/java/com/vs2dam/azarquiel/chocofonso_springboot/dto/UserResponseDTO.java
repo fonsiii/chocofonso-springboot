@@ -2,6 +2,7 @@ package com.vs2dam.azarquiel.chocofonso_springboot.dto;
 
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @Data
@@ -18,4 +19,6 @@ public class UserResponseDTO {
     private String billingAddress;
     private String billingCity;
     private String billingPostalCode;
+    private LocalDateTime registrationDate;
+    private boolean isActive;
 }
