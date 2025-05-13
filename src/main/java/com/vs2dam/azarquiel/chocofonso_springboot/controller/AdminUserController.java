@@ -1,7 +1,7 @@
 package com.vs2dam.azarquiel.chocofonso_springboot.controller;
 
 import com.vs2dam.azarquiel.chocofonso_springboot.domain.User;
-import com.vs2dam.azarquiel.chocofonso_springboot.dto.UpdateUserDTO;
+import com.vs2dam.azarquiel.chocofonso_springboot.dto.RegisterUserDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.dto.UserResponseDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.mapper.UserMapper;
 import com.vs2dam.azarquiel.chocofonso_springboot.service.UserService;
@@ -16,148 +16,143 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/admin/users") // <---- Nueva ruta base para el administrador
+@RequestMapping("/api/admin/users")
 public class AdminUserController {
 
     @Autowired
     private UserService userService;
 
     /**
-     * Endpoint para obtener todos los usuarios registrados (Admin).
-     * @return ResponseEntity con una lista de todos los usuarios.
+     * Obtiene todos los usuarios registrados en el sistema.
+     *
+     * @return Lista de usuarios en formato UserResponseDTO.
      */
-    @Operation(
-            summary = "Obtener todos los usuarios (Admin)",
-            description = "Este endpoint devuelve una lista de todos los usuarios registrados para administradores."
-    )
-    @ApiResponse(responseCode = "200", description = "Lista de usuarios obtenida exitosamente.",
-            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                    schema = @Schema(type = "array", implementation = UserResponseDTO.class)))
+    @Operation(summary = "Obtener todos los usuarios", description = "Recupera todos los usuarios del sistema.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista de usuarios obtenida correctamente.",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = UserResponseDTO.class))),
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor.")
+    })
     @GetMapping
     public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
         List<User> users = userService.getAllUsers();
-        List<UserResponseDTO> userResponseDTOs = users.stream()
+        List<UserResponseDTO> response = users.stream()
                 .map(UserMapper::toResponse)
                 .collect(Collectors.toList());
-        return ResponseEntity.ok(userResponseDTOs);
+        return ResponseEntity.ok(response);
     }
 
     /**
-     * Endpoint para obtener un usuario por su ID (Admin).
-     * @param id ID del usuario a buscar.
-     * @return ResponseEntity con la información del usuario encontrado o 404 si no existe.
+     * Registra un nuevo usuario (puede ser comprador, vendedor o admin).
+     *
+     * @param registerUserDTO Datos del nuevo usuario.
+     * @param bindingResult   Resultado de la validación.
+     * @return Usuario registrado en formato UserResponseDTO.
      */
-    @Operation(
-            summary = "Obtener un usuario por su ID (Admin)",
-            description = "Este endpoint permite obtener la información de un usuario usando su ID para administradores."
-    )
+    @Operation(summary = "Registrar un nuevo usuario (Admin)",
+            description = "Este endpoint permite a un administrador registrar un nuevo usuario con rol COMPRADOR, VENDEDOR o ADMIN.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Usuario encontrado.",
+            @ApiResponse(responseCode = "201", description = "Usuario registrado exitosamente.",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = UserResponseDTO.class))),
-            @ApiResponse(responseCode = "404", description = "Usuario no encontrado.")
+            @ApiResponse(responseCode = "400", description = "Datos inválidos o error al registrar el usuario.")
     })
-    @GetMapping("/{id}")
-    public ResponseEntity<UserResponseDTO> getUserById(
-            @Parameter(description = "ID del usuario a buscar") @PathVariable Long id
-    ) {
-        User user = userService.getUserById(id);
-        if (user != null) {
-            return ResponseEntity.ok(UserMapper.toResponse(user));
-        } else {
-            return ResponseEntity.notFound().build();
+    @PostMapping("/register")
+    public ResponseEntity<?> registerUser(
+            @Parameter(description = "Datos del usuario a registrar", required = true)
+            @Valid @RequestBody RegisterUserDTO registerUserDTO,
+            BindingResult bindingResult) {
+
+        if (bindingResult.hasErrors()) {
+            return ResponseEntity.badRequest().body("Errores de validación.");
+        }
+
+        try {
+            User user = userService.registerUser(registerUserDTO);
+            return ResponseEntity.status(HttpStatus.CREATED).body(UserMapper.toResponse(user));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 
-    @Operation(
-            summary = "Actualizar los datos de un usuario por ID (Admin)",
-            description = "Este endpoint permite actualizar los datos de un usuario específico por su ID para administradores."
-    )
+    /**
+     * Actualiza los datos de un usuario por ID.
+     *
+     * @param id              ID del usuario.
+     * @param dto             Datos a actualizar.
+     * @return Usuario actualizado.
+     */
+    @Operation(summary = "Actualizar un usuario", description = "Permite actualizar los datos de un usuario específico.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Datos del usuario actualizados exitosamente.",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = UserResponseDTO.class))),
-            @ApiResponse(responseCode = "404", description = "Usuario no encontrado."),
-            @ApiResponse(responseCode = "400", description = "Error en la actualización de los datos del usuario.")
+            @ApiResponse(responseCode = "200", description = "Usuario actualizado correctamente.",
+                    content = @Content(schema = @Schema(implementation = UserResponseDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Usuario no encontrado.")
     })
     @PutMapping("/{id}")
     public ResponseEntity<UserResponseDTO> updateUser(
-            @Parameter(description = "ID del usuario a actualizar") @PathVariable Long id,
-            @Valid @RequestBody UpdateUserDTO updateUserDTO
-    ) {
-        try {
-            User updatedUser = userService.updateUser(id, updateUserDTO);
-            return ResponseEntity.ok(UserMapper.toResponse(updatedUser));
-        } catch (RuntimeException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
-        }
+            @Parameter(description = "ID del usuario a actualizar", required = true) @PathVariable Long id,
+            @RequestBody RegisterUserDTO dto) {
+
+        User updatedUser = userService.updateUserById(id, dto);
+        return ResponseEntity.ok(UserMapper.toResponse(updatedUser));
     }
 
-    @Operation(
-            summary = "Banear un usuario por ID (Admin)",
-            description = "Este endpoint permite banear (desactivar) a un usuario específico por su ID para administradores."
-    )
+    /**
+     * Desactiva (banea) un usuario.
+     *
+     * @param id ID del usuario.
+     * @return Respuesta vacía con estado 200 OK.
+     */
+    @Operation(summary = "Banear usuario", description = "Desactiva la cuenta del usuario.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Usuario baneado exitosamente.",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = UserResponseDTO.class))),
+            @ApiResponse(responseCode = "200", description = "Usuario baneado correctamente."),
             @ApiResponse(responseCode = "404", description = "Usuario no encontrado.")
     })
     @PutMapping("/{id}/ban")
-    public ResponseEntity<UserResponseDTO> banUser(@PathVariable Long id) {
-        try {
-            userService.updateUserActive(id, false);
-            User bannedUser = userService.getUserById(id);
-            return ResponseEntity.ok(UserMapper.toResponse(bannedUser));
-        } catch (RuntimeException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
-        }
+    public ResponseEntity<Void> banUser(@PathVariable Long id) {
+        userService.updateUserActive(id, false);
+        return ResponseEntity.ok().build();
     }
 
-    @Operation(
-            summary = "Desbanear un usuario por ID (Admin)",
-            description = "Este endpoint permite desbanear (activar) a un usuario específico por su ID para administradores."
-    )
+    /**
+     * Reactiva (desbanea) un usuario.
+     *
+     * @param id ID del usuario.
+     * @return Respuesta vacía con estado 200 OK.
+     */
+    @Operation(summary = "Desbanear usuario", description = "Activa nuevamente la cuenta del usuario.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Usuario desbaneado exitosamente.",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = UserResponseDTO.class))),
+            @ApiResponse(responseCode = "200", description = "Usuario desbaneado correctamente."),
             @ApiResponse(responseCode = "404", description = "Usuario no encontrado.")
     })
     @PutMapping("/{id}/unban")
-    public ResponseEntity<UserResponseDTO> unbanUser(@PathVariable Long id) {
-        try {
-            userService.updateUserActive(id, true);
-            User unbannedUser = userService.getUserById(id);
-            // UserMapper::toResponse is a method reference to a method that takes a User and returns a UserResponseDTO
-            return ResponseEntity.ok(UserMapper.toResponse(unbannedUser));
-        } catch (RuntimeException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
-        }
+    public ResponseEntity<Void> unbanUser(@PathVariable Long id) {
+        userService.updateUserActive(id, true);
+        return ResponseEntity.ok().build();
     }
 
-    @Operation(
-            summary = "Eliminar un usuario por ID (Admin)",
-            description = "Este endpoint permite eliminar a un usuario específico por su ID para administradores."
-    )
+    /**
+     * Elimina un usuario del sistema.
+     *
+     * @param id ID del usuario a eliminar.
+     * @return Respuesta vacía con estado 200 OK.
+     */
+    @Operation(summary = "Eliminar usuario", description = "Elimina un usuario del sistema.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Usuario eliminado exitosamente."),
+            @ApiResponse(responseCode = "200", description = "Usuario eliminado correctamente."),
             @ApiResponse(responseCode = "404", description = "Usuario no encontrado.")
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        try {
-            userService.deleteUser(id);
-            return ResponseEntity.noContent().build();
-        } catch (RuntimeException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
-        }
+        userService.deleteUser(id);
+        return ResponseEntity.ok().build();
     }
 }

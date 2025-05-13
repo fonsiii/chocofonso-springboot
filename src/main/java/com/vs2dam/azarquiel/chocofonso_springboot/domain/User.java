@@ -105,6 +105,9 @@ public class User {
     )
     private Set<Role> roles = new HashSet<>();
 
+    // Nuevo campo de empresa
+    @Column(name = "company_name")
+    private String companyName;
 
     @PrePersist
     public void prePersist() {
