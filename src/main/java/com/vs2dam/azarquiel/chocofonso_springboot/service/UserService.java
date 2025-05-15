@@ -2,6 +2,7 @@ package com.vs2dam.azarquiel.chocofonso_springboot.service;
 
 import com.vs2dam.azarquiel.chocofonso_springboot.domain.Role;
 import com.vs2dam.azarquiel.chocofonso_springboot.domain.User;
+import com.vs2dam.azarquiel.chocofonso_springboot.dto.AdminUserDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.dto.RegisterUserDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.dto.UpdateAddressDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.dto.UpdateUserDTO;
@@ -40,91 +41,195 @@ public class UserService {
 
     @Transactional
     public User registerUser(RegisterUserDTO registerUserDTO) throws Exception {
-        // Verificar si el correo electrónico ya está registrado
-        Optional<User> existingUserWithEmail = userRepository.findByEmail(registerUserDTO.getEmail());
-        if (existingUserWithEmail.isPresent()) {
-            throw new Exception("El correo electrónico ya está registrado.");
-        }
+        checkEmailAndPhoneUnique(registerUserDTO.getEmail(), registerUserDTO.getPhoneNumber());
 
-        // Verificar si el número de teléfono ya está registrado
-        Optional<User> existingUserWithPhone = userRepository.findByPhoneNumber(registerUserDTO.getPhoneNumber());
-        if (existingUserWithPhone.isPresent()) {
-            throw new Exception("El número de teléfono ya está registrado.");
-        }
-
-        // Crear el usuario a partir del DTO
         User user = UserMapper.toEntity(registerUserDTO);
-        user.setPassword(passwordEncoder.encode(user.getPassword()));  // Encriptar la contraseña
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
 
-        // Convertir los roles de String a entidades Role
-        Set<Role> roles = registerUserDTO.getRoles().stream()
-                .map(roleName -> roleRepository.findByName(roleName)  // Buscar el rol por nombre
-                        .orElseThrow(() -> new RuntimeException("Rol no encontrado: " + roleName)))
-                .collect(Collectors.toSet());
+        Role defaultRole = roleRepository.findByName("COMPRADOR")
+                .orElseThrow(() -> new RuntimeException("Rol por defecto no encontrado."));
+        user.setRoles(Set.of(defaultRole));
+        user.setActive(true);
 
-        user.setRoles(roles);  // Asignar los roles al usuario
-
-        // Validar que si el usuario es un VENDEDOR, se haya proporcionado el nombre de la empresa
-        if (roles.stream().anyMatch(role -> "VENDEDOR".equalsIgnoreCase(role.getName()))) {
-            if (registerUserDTO.getCompanyName() == null || registerUserDTO.getCompanyName().isEmpty()) {
-                throw new Exception("El nombre de la empresa es obligatorio para los vendedores.");
-            }
-            user.setCompanyName(registerUserDTO.getCompanyName()); // Asignar la empresa solo para vendedores
-        }
-
-        // Guardar el usuario en la base de datos
         return userRepository.save(user);
     }
 
+    @Transactional
+    public User registerUserAsAdmin(AdminUserDTO adminUserDTO) throws Exception {
+        checkEmailAndPhoneUnique(adminUserDTO.getEmail(), adminUserDTO.getPhoneNumber());
 
-    public User getUserById(Long id) {
-        return userRepository.findById(id).orElse(null);
-    }
-    public User updateUserById(Long id, RegisterUserDTO dto) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + id));
+        User user = UserMapper.toEntity(adminUserDTO);
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
 
-        user.setFirstName(dto.getFirstName());
-        user.setLastName(dto.getLastName());
-        user.setPhoneNumber(dto.getPhoneNumber());
-        user.setEmail(dto.getEmail());
-        user.setCompanyName(dto.getCompanyName());
-
-        if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
-            user.setPassword(passwordEncoder.encode(dto.getPassword()));
-        }
-
-        Set<Role> roles = dto.getRoles().stream()
+        Set<Role> roles = adminUserDTO.getRoles().stream()
                 .map(roleName -> roleRepository.findByName(roleName)
                         .orElseThrow(() -> new RuntimeException("Rol no encontrado: " + roleName)))
                 .collect(Collectors.toSet());
         user.setRoles(roles);
 
-        user.setUpdatedAt(LocalDateTime.now());
+        boolean isVendedor = roles.stream()
+                .anyMatch(role -> role.getName().equalsIgnoreCase("VENDEDOR"));
+        if (isVendedor) {
+            if (adminUserDTO.getCompanyName() == null || adminUserDTO.getCompanyName().isBlank()) {
+                throw new RuntimeException("El nombre de la empresa es obligatorio para usuarios con rol VENDEDOR.");
+            }
+            user.setCompanyName(adminUserDTO.getCompanyName());
+        }
+
+        user.setActive(adminUserDTO.getActive() != null ? adminUserDTO.getActive() : true);
 
         return userRepository.save(user);
     }
 
-
-
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    private void checkEmailAndPhoneUnique(String email, String phoneNumber) throws Exception {
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new Exception("El correo electrónico ya está registrado.");
+        }
+        if (userRepository.findByPhoneNumber(phoneNumber).isPresent()) {
+            throw new Exception("El número de teléfono ya está registrado.");
+        }
     }
 
-    public User updateUserByEmail(String email, UpdateUserDTO dto) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
-        user.setFirstName(dto.getFirstName());
-        user.setLastName(dto.getLastName());
-        user.setPhoneNumber(dto.getPhoneNumber());
-        user.setUpdatedAt(LocalDateTime.now());
-        return userRepository.save(user);
+    public User getUserById(Long id) {
+        return userRepository.findById(id).orElse(null);
     }
 
     public User getUserByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ese correo: " + email));
     }
+
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    @Transactional
+    public User updateUserByAdmin(Long id, AdminUserDTO dto) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + id));
+
+        // Actualiza campos básicos (reutilizando método)
+        updateBasicUserData(user, dto);
+
+        // Actualizar estado activo si viene
+        if (dto.getActive() != null) {
+            user.setActive(dto.getActive());
+        }
+
+        // Actualizar companyName (con la validación para vendedor)
+        if (dto.getCompanyName() != null) {
+            user.setCompanyName(dto.getCompanyName());
+        }
+
+        // Actualizar roles si vienen (validar y asignar)
+        if (dto.getRoles() != null && !dto.getRoles().isEmpty()) {
+            Set<Role> roles = dto.getRoles().stream()
+                    .map(roleName -> roleRepository.findByName(roleName)
+                            .orElseThrow(() -> new RuntimeException("Rol no encontrado: " + roleName)))
+                    .collect(Collectors.toSet());
+
+            boolean isVendedor = roles.stream()
+                    .anyMatch(role -> role.getName().equalsIgnoreCase("VENDEDOR"));
+
+            if (isVendedor && (user.getCompanyName() == null || user.getCompanyName().isBlank())) {
+                throw new RuntimeException("El nombre de la empresa es obligatorio para usuarios con rol VENDEDOR.");
+            }
+
+            user.setRoles(roles);
+        }
+
+        user.setUpdatedAt(LocalDateTime.now());
+
+        return userRepository.save(user);
+    }
+
+    @Transactional
+    public User updateUserById(Long id, UpdateUserDTO dto) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + id));
+        updateBasicUserData(user, dto);
+        return userRepository.save(user);
+    }
+
+    @Transactional
+    public User updateUserByEmail(String email, UpdateUserDTO dto) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con correo: " + email));
+        updateBasicUserData(user, dto);
+        return userRepository.save(user);
+    }
+
+    private void updateBasicUserData(User user, UpdateUserDTO dto) {
+        user.setFirstName(dto.getFirstName());
+        user.setLastName(dto.getLastName());
+        user.setPhoneNumber(dto.getPhoneNumber());
+        user.setUpdatedAt(LocalDateTime.now());
+    }
+
+    @Transactional
+    public User updateUserPassword(Long id, String newPassword) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + id));
+        if (newPassword != null && !newPassword.isBlank()) {
+            user.setPassword(passwordEncoder.encode(newPassword));
+        }
+        user.setUpdatedAt(LocalDateTime.now());
+        return userRepository.save(user);
+    }
+
+    @Transactional
+    public User updateUserAddressById(Long id, UpdateAddressDTO dto) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + id));
+        updateAddress(user, dto);
+        return userRepository.save(user);
+    }
+
+    @Transactional
+    public User updateUserAddressByEmail(String email, UpdateAddressDTO dto) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con correo: " + email));
+        updateAddress(user, dto);
+        return userRepository.save(user);
+    }
+
+    private void updateAddress(User user, UpdateAddressDTO dto) {
+        user.setShippingAddress(dto.getShippingAddress());
+        user.setShippingCity(dto.getShippingCity());
+        user.setShippingPostalCode(dto.getShippingPostalCode());
+        user.setBillingAddress(dto.getBillingAddress());
+        user.setBillingCity(dto.getBillingCity());
+        user.setBillingPostalCode(dto.getBillingPostalCode());
+        user.setUpdatedAt(LocalDateTime.now());
+    }
+
+    @Transactional
+    public void setUserActiveStatusById(Long id, boolean active) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + id));
+        user.setActive(active);
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public void setUserActiveStatusByEmail(String email, boolean active) {
+        userRepository.findByEmail(email)
+                .ifPresent(user -> {
+                    user.setActive(active);
+                    userRepository.save(user);
+                });
+    }
+
+    @Transactional
+    public void deactivateUser(String email) {
+        setUserActiveStatusByEmail(email, false);
+    }
+
+    @Transactional
+    public void activateUser(String email) {
+        setUserActiveStatusByEmail(email, true);
+    }
+
 
     @Transactional
     public void incrementFailedLoginAttempts(String email) {
@@ -145,74 +250,12 @@ public class UserService {
     }
 
     @Transactional
-    public void deactivateUser(String email) {
-        userRepository.findByEmail(email)
-                .ifPresent(user -> {
-                    user.setActive(false);
-                    userRepository.save(user);
-                });
-    }
-
-    @Transactional
-    public void activateUser(String email) {
-        userRepository.findByEmail(email)
-                .ifPresent(user -> {
-                    user.setActive(true);
-                    userRepository.save(user);
-                });
-    }
-
-    @Transactional
     public void updateLastLogin(String email) {
         userRepository.findByEmail(email)
                 .ifPresent(user -> {
                     user.setLastLogin(LocalDateTime.now());
                     userRepository.save(user);
                 });
-    }
-
-    public User updateUserAddress(String email, UpdateAddressDTO updateAddressDTO) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
-        user.setShippingAddress(updateAddressDTO.getShippingAddress());
-        user.setShippingCity(updateAddressDTO.getShippingCity());
-        user.setShippingPostalCode(updateAddressDTO.getShippingPostalCode());
-        user.setBillingAddress(updateAddressDTO.getBillingAddress());
-        user.setBillingCity(updateAddressDTO.getBillingCity());
-        user.setBillingPostalCode(updateAddressDTO.getBillingPostalCode());
-        user.setUpdatedAt(LocalDateTime.now());
-        return userRepository.save(user);
-    }
-
-    @Transactional
-    public void updateUserActive(Long id, boolean isActive) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + id));
-        user.setActive(isActive);
-        userRepository.save(user);
-    }
-
-    public User updateUser(Long id, UpdateUserDTO dto) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + id));
-        user.setFirstName(dto.getFirstName());
-        user.setLastName(dto.getLastName());
-        user.setPhoneNumber(dto.getPhoneNumber());
-        user.setUpdatedAt(LocalDateTime.now());
-        return userRepository.save(user);
-    }
-
-    public User updateUserAddress(Long id, UpdateAddressDTO updateAddressDTO) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + id));
-        user.setShippingAddress(updateAddressDTO.getShippingAddress());
-        user.setShippingCity(updateAddressDTO.getShippingCity());
-        user.setShippingPostalCode(updateAddressDTO.getShippingPostalCode());
-        user.setBillingAddress(updateAddressDTO.getBillingAddress());
-        user.setBillingCity(updateAddressDTO.getBillingCity());
-        user.setBillingPostalCode(updateAddressDTO.getBillingPostalCode());
-        user.setUpdatedAt(LocalDateTime.now());
-        return userRepository.save(user);
     }
 
     public void deleteUser(Long id) {

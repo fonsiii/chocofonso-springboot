@@ -1,15 +1,26 @@
 package com.vs2dam.azarquiel.chocofonso_springboot.controller;
 
 import com.vs2dam.azarquiel.chocofonso_springboot.domain.Role;
+import com.vs2dam.azarquiel.chocofonso_springboot.domain.User;
 import com.vs2dam.azarquiel.chocofonso_springboot.dto.LoginDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.dto.LoginResult;
+import com.vs2dam.azarquiel.chocofonso_springboot.dto.RegisterUserDTO;
+import com.vs2dam.azarquiel.chocofonso_springboot.dto.UserResponseDTO;
+import com.vs2dam.azarquiel.chocofonso_springboot.mapper.UserMapper;
 import com.vs2dam.azarquiel.chocofonso_springboot.security.JwtTokenUtil;
 import com.vs2dam.azarquiel.chocofonso_springboot.service.AuthService;
+import com.vs2dam.azarquiel.chocofonso_springboot.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -28,6 +39,9 @@ public class AuthController {
 
     @Autowired
     private JwtTokenUtil jwtTokenUtil;
+
+    @Autowired
+    private UserService userService;
 
     @Operation(
             summary = "Iniciar sesión de usuario",
@@ -55,7 +69,27 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(result);
         }
     }
-
+    /**
+     * Endpoint para registrar un nuevo usuario.
+     * @param registerUserDTO DTO con la información del usuario a registrar.
+     * @return ResponseEntity con la información del usuario registrado en caso de éxito.
+     * @throws Exception Si ocurre algún error durante el registro.
+     */
+    @Operation(
+            summary = "Registrar un nuevo usuario",
+            description = "Este endpoint permite registrar un nuevo usuario en el sistema."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Usuario registrado exitosamente.",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = UserResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Error en el registro del usuario.")
+    })
+    @PostMapping("/register")
+    public ResponseEntity<UserResponseDTO> registerUser(@Valid @RequestBody RegisterUserDTO registerUserDTO) throws Exception {
+        User user = userService.registerUser(registerUserDTO);
+        return ResponseEntity.ok(UserMapper.toResponse(user));
+    }
     @Operation(
             summary = "Cerrar sesión de usuario",
             description = "Este endpoint permite a un usuario cerrar sesión y eliminar su token."

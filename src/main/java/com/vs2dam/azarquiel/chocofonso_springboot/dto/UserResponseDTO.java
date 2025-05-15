@@ -49,6 +49,9 @@ public class UserResponseDTO {
     @Schema(description = "Fecha de registro del usuario.", example = "2024-04-21T15:30:00")
     private LocalDateTime registrationDate;
 
+    @Schema(description = "Nombre de la empresa del usuario.", example = "ChocoFonso S.L.")
+    private String companyName;
+
     @Schema(description = "Indica si el usuario está activo.", example = "true")
     private boolean isActive;
 }

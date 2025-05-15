@@ -2,6 +2,7 @@ package com.vs2dam.azarquiel.chocofonso_springboot.mapper;
 
 import com.vs2dam.azarquiel.chocofonso_springboot.domain.Role;
 import com.vs2dam.azarquiel.chocofonso_springboot.domain.User;
+import com.vs2dam.azarquiel.chocofonso_springboot.dto.AdminUserDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.dto.RegisterUserDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.dto.UserResponseDTO;
 
@@ -20,6 +21,21 @@ public class UserMapper {
                 .build();
     }
 
+    public static User toEntity(AdminUserDTO dto){
+        return User.builder()
+                .email(dto.getEmail())
+                .password(dto.getPassword())
+                .firstName(dto.getFirstName())
+                .lastName(dto.getLastName())
+                .phoneNumber(dto.getPhoneNumber())
+                .companyName(dto.getCompanyName()) // Añadido para el campo companyName
+                .roles(dto.getRoles().stream()
+                        .map(roleName -> new Role(null, roleName))
+                        .collect(Collectors.toSet()))
+                .isActive(dto.getActive()) // Añadido para el campo active
+                .build();
+    }
+
     // Convierte un User en un UserResponseDTO para enviar una respuesta al cliente
     public static UserResponseDTO toResponse(User user) {
         UserResponseDTO dto = new UserResponseDTO();
@@ -34,6 +50,7 @@ public class UserMapper {
         dto.setBillingAddress(user.getBillingAddress());
         dto.setBillingCity(user.getBillingCity());
         dto.setBillingPostalCode(user.getBillingPostalCode());
+        dto.setCompanyName(user.getCompanyName());
         dto.setRegistrationDate(user.getRegistrationDate());
         dto.setActive(user.isActive());
         // Añade esta lógica para mapear los roles

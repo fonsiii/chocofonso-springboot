@@ -1,7 +1,9 @@
 package com.vs2dam.azarquiel.chocofonso_springboot.controller;
 
 import com.vs2dam.azarquiel.chocofonso_springboot.domain.User;
+import com.vs2dam.azarquiel.chocofonso_springboot.dto.AdminUserDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.dto.RegisterUserDTO;
+import com.vs2dam.azarquiel.chocofonso_springboot.dto.UpdateUserDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.dto.UserResponseDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.mapper.UserMapper;
 import com.vs2dam.azarquiel.chocofonso_springboot.service.UserService;
@@ -53,7 +55,7 @@ public class AdminUserController {
     /**
      * Registra un nuevo usuario (puede ser comprador, vendedor o admin).
      *
-     * @param registerUserDTO Datos del nuevo usuario.
+     * @param adminUserDTO Datos del nuevo usuario.
      * @param bindingResult   Resultado de la validación.
      * @return Usuario registrado en formato UserResponseDTO.
      */
@@ -68,7 +70,7 @@ public class AdminUserController {
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(
             @Parameter(description = "Datos del usuario a registrar", required = true)
-            @Valid @RequestBody RegisterUserDTO registerUserDTO,
+            @Valid @RequestBody AdminUserDTO adminUserDTO,
             BindingResult bindingResult) {
 
         if (bindingResult.hasErrors()) {
@@ -76,7 +78,7 @@ public class AdminUserController {
         }
 
         try {
-            User user = userService.registerUser(registerUserDTO);
+            User user = userService.registerUserAsAdmin(adminUserDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body(UserMapper.toResponse(user));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -99,9 +101,9 @@ public class AdminUserController {
     @PutMapping("/{id}")
     public ResponseEntity<UserResponseDTO> updateUser(
             @Parameter(description = "ID del usuario a actualizar", required = true) @PathVariable Long id,
-            @RequestBody RegisterUserDTO dto) {
+            @RequestBody AdminUserDTO dto) {
 
-        User updatedUser = userService.updateUserById(id, dto);
+        User updatedUser = userService.updateUserByAdmin(id, dto);
         return ResponseEntity.ok(UserMapper.toResponse(updatedUser));
     }
 
@@ -118,7 +120,7 @@ public class AdminUserController {
     })
     @PutMapping("/{id}/ban")
     public ResponseEntity<Void> banUser(@PathVariable Long id) {
-        userService.updateUserActive(id, false);
+        userService.setUserActiveStatusById(id, false);
         return ResponseEntity.ok().build();
     }
 
@@ -135,7 +137,7 @@ public class AdminUserController {
     })
     @PutMapping("/{id}/unban")
     public ResponseEntity<Void> unbanUser(@PathVariable Long id) {
-        userService.updateUserActive(id, true);
+        userService.setUserActiveStatusById(id, true);
         return ResponseEntity.ok().build();
     }
 

@@ -41,12 +41,4 @@ public class RegisterUserDTO {
     @Pattern(regexp = "^[6789]\\d{8}$", message = "El número de teléfono debe ser un número español válido de 9 dígitos que comience por 6, 7, 8 o 9.")
     private String phoneNumber;
 
-    @Schema(description = "Nombre de la empresa (obligatorio si el rol es VENDEDOR).", example = "ChocoFonso S.L.")
-    private String companyName;
-
-    @Schema(description = "Lista de roles asignados al usuario. Puede contener: COMPRADOR, VENDEDOR o ADMIN.",
-            example = "[\"COMPRADOR\"]",
-            requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotEmpty(message = "Los roles son obligatorios.")
-    private Set<String> roles;
 }

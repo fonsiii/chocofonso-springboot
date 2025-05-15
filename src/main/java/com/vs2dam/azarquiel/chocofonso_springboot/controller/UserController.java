@@ -37,27 +37,7 @@ public class UserController {
     @Autowired
     private JwtTokenUtil jwtTokenUtil;
 
-    /**
-     * Endpoint para registrar un nuevo usuario.
-     * @param registerUserDTO DTO con la información del usuario a registrar.
-     * @return ResponseEntity con la información del usuario registrado en caso de éxito.
-     * @throws Exception Si ocurre algún error durante el registro.
-     */
-    @Operation(
-            summary = "Registrar un nuevo usuario",
-            description = "Este endpoint permite registrar un nuevo usuario en el sistema."
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Usuario registrado exitosamente.",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = UserResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Error en el registro del usuario.")
-    })
-    @PostMapping("/register")
-    public ResponseEntity<UserResponseDTO> registerUser(@Valid @RequestBody RegisterUserDTO registerUserDTO) throws Exception {
-        User user = userService.registerUser(registerUserDTO);
-        return ResponseEntity.ok(UserMapper.toResponse(user));
-    }
+
 
     /**
      * Endpoint para obtener un usuario por su ID.
@@ -202,7 +182,7 @@ public class UserController {
 
         try {
             String email = jwtTokenUtil.getUsernameFromToken(token);
-            User updatedUser = userService.updateUserAddress(email, updateAddressDTO);
+            User updatedUser = userService.updateUserAddressByEmail(email, updateAddressDTO);
             if (updatedUser != null) {
                 return ResponseEntity.ok("Dirección actualizada correctamente.");
             } else {
@@ -230,7 +210,7 @@ public class UserController {
             @Valid @RequestBody UpdateUserDTO updateUserDTO
     ) {
         try {
-            User updatedUser = userService.updateUser(id, updateUserDTO);
+            User updatedUser = userService.updateUserById(id, updateUserDTO);
             return ResponseEntity.ok(UserMapper.toResponse(updatedUser));
         } catch (RuntimeException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
@@ -250,7 +230,7 @@ public class UserController {
     @PutMapping("/{id}/ban")
     public ResponseEntity<UserResponseDTO> banUser(@PathVariable Long id) {
         try {
-            userService.updateUserActive(id, false);
+            userService.setUserActiveStatusById(id, false);
             User bannedUser = userService.getUserById(id);
             return ResponseEntity.ok(UserMapper.toResponse(bannedUser));
         } catch (RuntimeException e) {
@@ -270,7 +250,7 @@ public class UserController {
     @PutMapping("/{id}/unban")
     public ResponseEntity<UserResponseDTO> unbanUser(@PathVariable Long id) {
         try {
-            userService.updateUserActive(id, true);
+            userService.setUserActiveStatusById(id, true);
             User unbannedUser = userService.getUserById(id);
             return ResponseEntity.ok(UserMapper.toResponse(unbannedUser));
         } catch (RuntimeException e) {
