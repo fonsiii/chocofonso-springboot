@@ -114,8 +114,4 @@ public class User {
         this.registrationDate = LocalDateTime.now();
     }
 
-    // Solo actualizamos last_login cuando el usuario inicia sesión, y no actualizamos 'updated_at'
-    public void updateLastLogin() {
-        this.lastLogin = LocalDateTime.now();
-    }
 }
