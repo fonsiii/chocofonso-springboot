@@ -64,9 +64,68 @@ public class VendedorProductoController {
     }
 
     @GetMapping("/categorias")
+    @Operation(summary = "Obtener todas las categorías")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista de categorías obtenida correctamente.",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = Category.class))),
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor.")
+    })
     public ResponseEntity<List<Category>> getCategorias() {
         List<Category> categorias = categoryService.getAllCategories(); // Este método debe estar en tu CategoryService
         return ResponseEntity.ok(categorias);
+    }
+
+    @DeleteMapping("/categorias/{id}")
+    @Operation(summary = "Eliminar una categoría por su ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Categoría eliminada correctamente."),
+            @ApiResponse(responseCode = "404", description = "Categoría no encontrada.")
+    })
+    public ResponseEntity<Void> eliminarCategoria(@PathVariable Long id) {
+        boolean eliminado = categoryService.deleteCategory(id);
+        if (eliminado) {
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PutMapping("/categorias/{id}")
+    @Operation(summary = "Actualizar una categoría existente")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Categoría actualizada correctamente.",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = Category.class))),
+            @ApiResponse(responseCode = "404", description = "Categoría no encontrada.")
+    })
+    public ResponseEntity<Category> actualizarCategoria(
+            @PathVariable Long id,
+            @RequestBody Category categoria) {
+
+        // Aquí deberías implementar la lógica para actualizar la categoría
+        // Por ejemplo, buscarla por ID y luego actualizar sus campos
+        Category categoriaExistente = categoryService.findById(id)
+                .orElseThrow(() -> new RuntimeException("Categoría no encontrada con ID: " + id));
+        categoriaExistente.setNombre(categoria.getNombre());
+        // Guarda la categoría actualizada
+        Category categoriaActualizada = categoryService.saveCategory(categoriaExistente);
+        return ResponseEntity.ok(categoriaActualizada);
+    }
+
+    @PostMapping("/categorias")
+    @Operation(summary = "Crear una nueva categoría")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Categoría creada correctamente.",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = Category.class))),
+            @ApiResponse(responseCode = "400", description = "Solicitud incorrecta.")
+    })
+    public ResponseEntity<Category> crearCategoria(@RequestBody Category categoria) {
+        // Aquí deberías implementar la lógica para crear una nueva categoría
+        // Por ejemplo, guardarla en la base de datos
+        Category nuevaCategoria = categoryService.saveCategory(categoria);
+        return ResponseEntity.status(201).body(nuevaCategoria);
     }
 
 
@@ -105,6 +164,10 @@ public class VendedorProductoController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Eliminar un producto por su ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Producto eliminado correctamente."),
+            @ApiResponse(responseCode = "404", description = "Producto no encontrado.")
+    })
     public ResponseEntity<Void> eliminarProducto(@PathVariable Long id) {
         boolean eliminado = productoService.deleteProductById(id);
         if (eliminado) {
@@ -116,6 +179,12 @@ public class VendedorProductoController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Actualizar un producto existente")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Producto actualizado correctamente.",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ProductoResponseDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Producto no encontrado.")
+    })
     public ResponseEntity<ProductoResponseDTO> actualizarProducto(
             @PathVariable Long id,
             @RequestBody AddProductDTO dto) {
@@ -151,7 +220,5 @@ public class VendedorProductoController {
 
         return ResponseEntity.ok(response);
     }
-
-
 
 }

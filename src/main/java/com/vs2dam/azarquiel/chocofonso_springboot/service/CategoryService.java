@@ -20,5 +20,15 @@ public class CategoryService {
     public List<Category> getAllCategories() {
         return categoryRepository.findAll(); // Usa tu repositorio JPA
     }
+    public Category saveCategory(Category category) {
+        return categoryRepository.save(category); // Usa tu repositorio JPA
+    }
+    public boolean deleteCategory(Long id) {
+        if (categoryRepository.existsById(id)) {
+            categoryRepository.deleteById(id);
+            return true;
+        }
+        return false; // Retorna false si la categoría no existe
+    }
 
 }
