@@ -16,8 +16,4 @@ public class Category {
     @Column(name = "nombre_categoria", unique = true)
     private String nombre;
 
-
-    @Column(name = "orden_visualizacion")
-    private Integer orden;
-
 }

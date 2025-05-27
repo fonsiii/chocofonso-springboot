@@ -106,5 +106,13 @@ public class ProductoService {
         return false;
     }
 
+    public List<Product> getAllProducts() {
+        return productoRepository.findAll();
+    }
+
+    public Optional<Product> getProductById(Long id) {
+        return productoRepository.findById(id);
+    }
+
 
 }
