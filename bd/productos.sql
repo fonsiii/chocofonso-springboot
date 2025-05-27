@@ -1,0 +1,22 @@
+CREATE TABLE `productos` (
+  `id_producto` int NOT NULL AUTO_INCREMENT,
+  `nombre_producto` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `precio_unidad` decimal(10,2) DEFAULT NULL,
+  `precio_kg` decimal(10,2) DEFAULT NULL,
+  `descripcion` text COLLATE utf8mb4_unicode_ci,
+  `precio_oferta` decimal(10,2) DEFAULT NULL,
+  `estrellas` decimal(2,1) DEFAULT NULL,
+  `peso_producto` decimal(10,3) DEFAULT NULL,
+  `disponibilidad` int DEFAULT NULL,
+  `estado` enum('activo','inactivo','descatalogado') COLLATE utf8mb4_unicode_ci DEFAULT 'activo',
+  `marca_producto` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `fecha_creacion` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `fecha_modificacion` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `reseñas` int DEFAULT '0',
+  `ingredientes` text COLLATE utf8mb4_unicode_ci,
+  `alergenos` text COLLATE utf8mb4_unicode_ci,
+  `informacion_nutricional` text COLLATE utf8mb4_unicode_ci,
+  `num_resenas` int DEFAULT '0',
+  PRIMARY KEY (`id_producto`),
+  UNIQUE KEY `nombre_producto` (`nombre_producto`)
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
