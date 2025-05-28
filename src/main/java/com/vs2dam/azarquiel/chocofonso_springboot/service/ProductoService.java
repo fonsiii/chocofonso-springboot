@@ -1,9 +1,6 @@
 package com.vs2dam.azarquiel.chocofonso_springboot.service;
 
-import com.vs2dam.azarquiel.chocofonso_springboot.domain.Category;
-import com.vs2dam.azarquiel.chocofonso_springboot.domain.Product;
-import com.vs2dam.azarquiel.chocofonso_springboot.domain.ProductIMG;
-import com.vs2dam.azarquiel.chocofonso_springboot.domain.User;
+import com.vs2dam.azarquiel.chocofonso_springboot.domain.*;
 import com.vs2dam.azarquiel.chocofonso_springboot.dto.AddProductDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.mapper.ProductoMapper;
 import com.vs2dam.azarquiel.chocofonso_springboot.repository.ProductRepository;
@@ -107,7 +104,7 @@ public class ProductoService {
     }
 
     public List<Product> getAllProducts() {
-        return productoRepository.findAll();
+        return productoRepository.findByEstado(EstadoProducto.ACTIVO);
     }
 
     public Optional<Product> getProductById(Long id) {
