@@ -2,6 +2,7 @@ package com.vs2dam.azarquiel.chocofonso_springboot.controller;
 
 import com.vs2dam.azarquiel.chocofonso_springboot.domain.Category;
 import com.vs2dam.azarquiel.chocofonso_springboot.domain.Product;
+import com.vs2dam.azarquiel.chocofonso_springboot.dto.PrecioRangoDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.dto.ProductoResponseDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.service.CategoryService;
 import com.vs2dam.azarquiel.chocofonso_springboot.service.ProductoService;
@@ -11,7 +12,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/productos")
@@ -81,6 +85,38 @@ public class ProductsController {
         }
         return ResponseEntity.ok(productos);
     }
+
+    @GetMapping("/precio/rango")
+    @Operation(summary = "Obtener rango de precios (min y max) de los productos")
+    public ResponseEntity<PrecioRangoDTO> getPrecioRango() {
+        Double minPrecio = productoService.getMinPrecio();
+        Double maxPrecio = productoService.getMaxPrecio();
+        PrecioRangoDTO rango = new PrecioRangoDTO(minPrecio, maxPrecio);
+        return ResponseEntity.ok(rango);
+    }
+
+    @Operation(summary = "Obtener productos filtrados por categorías y rango de precio")
+    @GetMapping("/filtrar")
+    public ResponseEntity<List<Product>> filtrarProductos(
+            @RequestParam(required = false) String categorias,
+            @RequestParam Double minPrecio,
+            @RequestParam Double maxPrecio) {
+
+        List<Long> categoriaIds = Collections.emptyList();
+        if (categorias != null && !categorias.isEmpty()) {
+            categoriaIds = Arrays.stream(categorias.split(","))
+                    .map(Long::parseLong)
+                    .collect(Collectors.toList());
+        }
+
+        List<Product> productos = productoService.findByCategoriasYPrecio(categoriaIds, minPrecio, maxPrecio);
+        if (productos.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(productos);
+    }
+
+
 
 
 }

@@ -119,6 +119,24 @@ public class ProductoService {
         return productoRepository.findByCategoriaIdsAndCount(ids, ids.size());
     }
 
+    public Double getMinPrecio() {
+        return productoRepository.findMinPrice();
+    }
+
+    public Double getMaxPrecio() {
+        return productoRepository.findMaxPrice();
+    }
+
+    public List<Product> findByCategoriasYPrecio(List<Long> categoryIds, Double minPrecio, Double maxPrecio) {
+        if (categoryIds == null || categoryIds.isEmpty()) {
+            return productoRepository.findAll().stream()
+                    .filter(p -> p.getPrecioUnidad() >= minPrecio && p.getPrecioUnidad() <= maxPrecio)
+                    .collect(Collectors.toList());
+        }
+        return productoRepository.findByCategoriasANDYPrecio(categoryIds, minPrecio, maxPrecio, categoryIds.size());
+    }
+
+
 
 
 
