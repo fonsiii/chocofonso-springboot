@@ -112,4 +112,15 @@ public class ProductoService {
     }
 
 
+    public List<Product> findByCategoriaIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return getAllProducts();
+        }
+        return productoRepository.findByCategoriaIdsAndCount(ids, ids.size());
+    }
+
+
+
+
+
 }

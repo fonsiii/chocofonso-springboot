@@ -9,10 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -40,6 +37,7 @@ public class ProductsController {
         return ResponseEntity.ok(productos);
     }
 
+
     // Obtener un producto por id
     @GetMapping("/{id}")
     @Operation(summary = "Obtener producto por ID")
@@ -64,4 +62,25 @@ public class ProductsController {
         List<Category> categorias = categoryService.getAllCategories();
         return ResponseEntity.ok(categorias);
     }
+
+    @GetMapping("/categoria")
+    @Operation(summary = "Obtener productos por IDs de categorías")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Productos encontrados")
+    })
+    public ResponseEntity<List<Product>> getProductosByCategoriaIds(@RequestParam(required = false) List<Long> ids) {
+        List<Product> productos;
+        if (ids == null || ids.isEmpty()) {
+            productos = productoService.getAllProducts();
+        } else {
+            productos = productoService.findByCategoriaIds(ids);
+        }
+
+        if (productos.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(productos);
+    }
+
+
 }
