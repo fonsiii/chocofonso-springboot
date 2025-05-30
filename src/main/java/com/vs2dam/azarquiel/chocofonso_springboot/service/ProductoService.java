@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -108,16 +109,17 @@ public class ProductoService {
     }
 
     public Optional<Product> getProductById(Long id) {
-        return productoRepository.findById(id);
+        return productoRepository.findByIdAndEstado(id, EstadoProducto.ACTIVO);
     }
-
 
     public List<Product> findByCategoriaIds(List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
             return getAllProducts();
         }
-        return productoRepository.findByCategoriaIdsAndCount(ids, ids.size());
+        return productoRepository.findByCategoriaIdsAndEstado(ids, ids.size());
     }
+
+
 
     public Double getMinPrecio() {
         return productoRepository.findMinPrice();
@@ -127,14 +129,22 @@ public class ProductoService {
         return productoRepository.findMaxPrice();
     }
 
-    public List<Product> findByCategoriasYPrecio(List<Long> categoryIds, Double minPrecio, Double maxPrecio) {
+    public List<Product> findByCategoriasPrecioYMarca(List<Long> categoryIds, Double minPrecio, Double maxPrecio, String marca) {
         if (categoryIds == null || categoryIds.isEmpty()) {
-            return productoRepository.findAll().stream()
-                    .filter(p -> p.getPrecioUnidad() >= minPrecio && p.getPrecioUnidad() <= maxPrecio)
-                    .collect(Collectors.toList());
+            // Sin categorías -> filtrar solo por precio y marca
+            return productoRepository.findByPrecioBetweenAndMarcaAndEstado(minPrecio, maxPrecio, marca);
         }
-        return productoRepository.findByCategoriasANDYPrecio(categoryIds, minPrecio, maxPrecio, categoryIds.size());
+        return productoRepository.findByCategoriasANDPrecioYMarcaANDEstado(
+                categoryIds, minPrecio, maxPrecio, marca, categoryIds.size());
     }
+
+    public List<String> getAllMarcas() {
+        return productoRepository.findAllMarcas();
+    }
+
+
+
+
 
 
 

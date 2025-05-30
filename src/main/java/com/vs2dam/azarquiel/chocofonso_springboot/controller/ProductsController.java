@@ -95,12 +95,13 @@ public class ProductsController {
         return ResponseEntity.ok(rango);
     }
 
-    @Operation(summary = "Obtener productos filtrados por categorías y rango de precio")
     @GetMapping("/filtrar")
+    @Operation(summary = "Obtener productos filtrados por categorías, rango de precio y marca")
     public ResponseEntity<List<Product>> filtrarProductos(
             @RequestParam(required = false) String categorias,
             @RequestParam Double minPrecio,
-            @RequestParam Double maxPrecio) {
+            @RequestParam Double maxPrecio,
+            @RequestParam(required = false) String marca) {
 
         List<Long> categoriaIds = Collections.emptyList();
         if (categorias != null && !categorias.isEmpty()) {
@@ -109,12 +110,25 @@ public class ProductsController {
                     .collect(Collectors.toList());
         }
 
-        List<Product> productos = productoService.findByCategoriasYPrecio(categoriaIds, minPrecio, maxPrecio);
+        List<Product> productos = productoService.findByCategoriasPrecioYMarca(categoriaIds, minPrecio, maxPrecio, marca);
         if (productos.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.ok(productos);
     }
+
+    @GetMapping("/marcas")
+    @Operation(summary = "Obtener todas las marcas disponibles")
+    public ResponseEntity<List<String>> getAllMarcas() {
+        List<String> marcas = productoService.getAllMarcas();
+        return ResponseEntity.ok(marcas);
+    }
+
+
+
+
+
+
 
 
 
