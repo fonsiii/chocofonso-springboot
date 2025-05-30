@@ -142,6 +142,10 @@ public class ProductoService {
         return productoRepository.findAllMarcas();
     }
 
+    public List<Product> buscarPorNombre(String nombre) {
+        return productoRepository.findByNombreContainingIgnoreCaseAndEstadoActivo(nombre);
+    }
+
 
 
 

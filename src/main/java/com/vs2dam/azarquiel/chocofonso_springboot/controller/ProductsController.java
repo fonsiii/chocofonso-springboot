@@ -124,6 +124,17 @@ public class ProductsController {
         return ResponseEntity.ok(marcas);
     }
 
+    @GetMapping("/buscar")
+    @Operation(summary = "Buscar productos por nombre")
+    public ResponseEntity<List<Product>> buscarProductosPorNombre(@RequestParam String q) {
+        List<Product> productos = productoService.buscarPorNombre(q);
+        if (productos.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(productos);
+    }
+
+
 
 
 

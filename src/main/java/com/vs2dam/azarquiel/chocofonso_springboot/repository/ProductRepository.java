@@ -76,5 +76,13 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query("SELECT DISTINCT LOWER(p.marca) FROM Product p WHERE p.estado = 'ACTIVO'")
     List<String> findAllMarcas();
 
+    @Query("""
+    SELECT p FROM Product p 
+    WHERE p.estado = 'ACTIVO' 
+    AND LOWER(p.nombre) LIKE LOWER(CONCAT('%', :nombre, '%'))
+""")
+    List<Product> findByNombreContainingIgnoreCaseAndEstadoActivo(@Param("nombre") String nombre);
+
+
 
 }
