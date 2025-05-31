@@ -1,38 +1,45 @@
 package com.vs2dam.azarquiel.chocofonso_springboot.domain;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
+import java.time.LocalDateTime;
 
-@Data
 @Entity
-@Table(name = "resenas")
+@Table(name = "valoraciones", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"id_producto", "id_usuario"})
+})
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Reviews {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_resena")
+    @Column(name = "id_valoracion")
     private Long id;
 
-    @Column(name = "id_producto")
-    private Long idProducto;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_producto", nullable = false)
+    @JsonBackReference
+    private Product producto;
 
-    @Column(name = "id_usuario")
-    private Long idUsuario;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_usuario", nullable = false)
+    private User usuario;
 
-    @Column(name = "estrellas")
-    private Integer estrellas;
+    @Column
+    private Double estrellas;
 
-    @Column(name = "comentario")
+    @Column(columnDefinition = "TEXT")
     private String comentario;
 
-    @Column(name = "fecha_creacion", updatable = false)
-    private String fechaCreacion;
+    @Column(name = "fecha", nullable = false, updatable = false)
+    private LocalDateTime fecha;
 
-    @Convert(converter = EstadoReviewsConverter.class)
-    @Column(name = "estado_publicacion")
-    private EstadoPublicacion estado;
-
-
-    @Column(name = "fecha_modificacion")
-    private String fechaModificacion;
-
+    @PrePersist
+    protected void onCreate() {
+        fecha = LocalDateTime.now();
+    }
 }

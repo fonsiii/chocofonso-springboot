@@ -5,6 +5,7 @@ import com.vs2dam.azarquiel.chocofonso_springboot.dto.AddProductDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.dto.ProductImageDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.dto.ProductoResponseDTO;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -33,6 +34,13 @@ public class ProductoMapper {
 
     // Para devolver un producto al frontend (de entidad a DTO)
     public static ProductoResponseDTO toResponse(Product product) {
+        List<ProductIMG> imagenes = new ArrayList<>(product.getImages());
+        List<Category> categorias = new ArrayList<>(product.getCategories());
+        int reviewsCount = 0;
+        if (product.getValoraciones() != null) {
+            reviewsCount = new ArrayList<>(product.getValoraciones()).size();
+        }
+
         return ProductoResponseDTO.builder()
                 .id(product.getId())
                 .nombre(product.getNombre())
@@ -48,16 +56,15 @@ public class ProductoMapper {
                 .alergenos(product.getAlergenos())
                 .informacionNutricional(product.getInformacionNutricional())
                 .estrellas(product.getEstrellas())
-                .reviews(product.getReviews() != null ? product.getReviews().size() : 0)
-                .imagenes(product.getImages().stream()
+                .reviews(reviewsCount)
+                .imagenes(imagenes.stream()
                         .map(img -> ProductImageDTO.builder()
                                 .url(img.getUrl())
                                 .principal(img.isPrincipal())
                                 .orden(img.getOrden())
                                 .build())
                         .collect(Collectors.toList()))
-
-                .categorias(product.getCategories().stream()
+                .categorias(categorias.stream()
                         .map(Category::getNombre)
                         .collect(Collectors.toList()))
                 .build();

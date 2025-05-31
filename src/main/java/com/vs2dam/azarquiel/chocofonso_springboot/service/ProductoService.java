@@ -42,6 +42,10 @@ public class ProductoService {
         product.setMarca(vendedor.getCompanyName());
         return productoRepository.save(product);
     }
+    public Product saveProduct(Product producto) {
+        return productoRepository.save(producto);
+    }
+
 
     @Transactional
     public Product updateProduct(Long id, AddProductDTO dto, Set<Category> categorias, Set<ProductIMG> imagenes, String userEmail) {

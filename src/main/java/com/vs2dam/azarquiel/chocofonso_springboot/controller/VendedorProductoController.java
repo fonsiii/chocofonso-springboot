@@ -51,17 +51,23 @@ public class VendedorProductoController {
             @ApiResponse(responseCode = "500", description = "Error interno del servidor.")
     })
     @PostMapping("/mis-productos")
-    public ResponseEntity<List<ProductoResponseDTO>> getAllProducts(@RequestBody UserResponseDTO userData) {
-        String companyName = userData.getCompanyName();
+    public ResponseEntity<?> getAllProducts(@RequestBody UserResponseDTO userData) {
+        try {
+            String companyName = userData.getCompanyName();
 
-        List<Product> productos = productoService.getAllProductsByMarca(companyName);
+            List<Product> productos = productoService.getAllProductsByMarca(companyName);
 
-        List<ProductoResponseDTO> response = productos.stream()
-                .map(ProductoMapper::toResponse)
-                .collect(Collectors.toList());
+            List<ProductoResponseDTO> response = productos.stream()
+                    .map(ProductoResponseDTO::from)
+                    .collect(Collectors.toList());
 
-        return ResponseEntity.ok(response);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace(); // para consola/ logs
+            return ResponseEntity.status(500).body("Error interno: " + e.getMessage());
+        }
     }
+
 
     @GetMapping("/categorias")
     @Operation(summary = "Obtener todas las categorías")
@@ -158,7 +164,7 @@ public class VendedorProductoController {
         // 4. (opcional) Asignar las imágenes al producto para devolverlas en el response
         producto.setImages(imagenes);
 
-        ProductoResponseDTO response = ProductoMapper.toResponse(producto);
+        ProductoResponseDTO response = ProductoResponseDTO.from(producto);
         return ResponseEntity.ok(response);
     }
 
@@ -216,7 +222,8 @@ public class VendedorProductoController {
         }
 
         Product productoActualizado = productoService.updateProduct(id, dto, categorias, imagenes, email);
-        ProductoResponseDTO response = ProductoMapper.toResponse(productoActualizado);
+        ProductoResponseDTO response =
+                ProductoResponseDTO.from(productoActualizado);
 
         return ResponseEntity.ok(response);
     }

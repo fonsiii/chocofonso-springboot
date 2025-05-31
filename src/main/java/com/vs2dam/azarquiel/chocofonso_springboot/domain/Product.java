@@ -1,5 +1,6 @@
 package com.vs2dam.azarquiel.chocofonso_springboot.domain;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -92,13 +93,10 @@ public class Product {
     )
     private Set<Category> categories = new HashSet<>();
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-            name = "resenas",
-            joinColumns = @JoinColumn(name = "id_producto"),
-            inverseJoinColumns = @JoinColumn(name = "id_resena")
-    )
-    private Set<Reviews> reviews = new HashSet<>();
+    @OneToMany(mappedBy = "producto", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JsonManagedReference
+    private Set<Reviews> valoraciones = new HashSet<>();
+
 
     @Column(name = "num_resenas")
     private Integer numResenas;
