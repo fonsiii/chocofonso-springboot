@@ -8,6 +8,7 @@ import lombok.Data;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Builder
@@ -15,7 +16,7 @@ import java.util.stream.Collectors;
 public class ProductoResponseDTO {
     private Long id;
     private String nombre;
-    private List<String> categorias; // Nombres de las categorías
+    private List<Map<String, ?>> categorias; // Nombres de las categorías
     private Double precioUnidad;
     private Double precioKg;
     private String descripcion;
@@ -40,8 +41,13 @@ public class ProductoResponseDTO {
                 .nombre(product.getNombre())
                 .categorias(product.getCategories() == null ? List.of() :
                         new ArrayList<>(product.getCategories()).stream()
-                                .map(Category::getNombre)
-                                .collect(Collectors.toList()))
+                                .map(cat -> Map.of(
+                                        "id", cat.getId(),
+                                        "nombre", cat.getNombre()
+                                ))
+                                .collect(Collectors.toList())
+                )
+
                 .precioUnidad(product.getPrecioUnidad())
                 .precioKg(product.getPrecioKg())
                 .descripcion(product.getDescripcion())
@@ -51,8 +57,8 @@ public class ProductoResponseDTO {
                 .stock(product.getStock())
                 .estado(product.getEstado() != null ? product.getEstado().toString() : null)
                 .marca(product.getMarca())
-                .fechaCreacion(product.getFechaCreacion())
-                .fechaModificacion(product.getFechaModificacion())
+                .fechaCreacion(product.getFechaCreacion() != null ? product.getFechaCreacion().toString() : null)
+                .fechaModificacion(product.getFechaModificacion() != null ? product.getFechaModificacion().toString() : null)
                 .reviews(product.getNumResenas())
                 .ingredientes(product.getIngredientes())
                 .alergenos(product.getAlergenos())

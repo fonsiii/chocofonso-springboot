@@ -4,6 +4,7 @@ import com.vs2dam.azarquiel.chocofonso_springboot.domain.*;
 import com.vs2dam.azarquiel.chocofonso_springboot.dto.AddProductDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.mapper.ProductoMapper;
 import com.vs2dam.azarquiel.chocofonso_springboot.repository.ProductRepository;
+import com.vs2dam.azarquiel.chocofonso_springboot.repository.ReviewsRepository;
 import com.vs2dam.azarquiel.chocofonso_springboot.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +27,8 @@ public class ProductoService {
 
     @Autowired
     private ProductIMGService productIMGService;
+    @Autowired
+    private ReviewsRepository reviewsRepository;
 
     @Transactional
     public Product createProduct(AddProductDTO dto, Set<Category> categorias, Set<ProductIMG> imagenes, String userEmail) {
@@ -99,9 +102,11 @@ public class ProductoService {
         return productoRepository.findByMarca(companyName);
     }
 
+    @Transactional
     public boolean deleteProductById(Long id) {
         Optional<Product> productoOpt = productoRepository.findById(id);
         if (productoOpt.isPresent()) {
+            reviewsRepository.deleteByProductoId(id);
             productoRepository.deleteById(id);
             return true;
         }

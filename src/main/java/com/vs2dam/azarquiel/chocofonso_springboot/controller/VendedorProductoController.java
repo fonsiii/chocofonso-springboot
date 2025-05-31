@@ -138,7 +138,7 @@ public class VendedorProductoController {
 
     @PostMapping
     @Operation(summary = "Crear un producto nuevo")
-    public ResponseEntity<ProductoResponseDTO> crearProducto(@Valid @RequestBody AddProductDTO dto) {
+    public ResponseEntity<ProductoResponseDTO> crearProducto(@RequestBody AddProductDTO dto) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
 
         // 1. Obtener las categorías a partir de los IDs
@@ -158,7 +158,7 @@ public class VendedorProductoController {
                     img.setUrl(imgDto.getUrl());
                     img.setPrincipal(imgDto.isPrincipal());
                     img.setOrden(imgDto.getOrden());
-                    img.setCreatedAt(LocalDateTime.now().toString());
+                    img.setCreatedAt(LocalDateTime.now());
                     return productIMGService.save(img);
                 }).collect(Collectors.toSet());
 
@@ -176,11 +176,16 @@ public class VendedorProductoController {
             @ApiResponse(responseCode = "404", description = "Producto no encontrado.")
     })
     public ResponseEntity<Void> eliminarProducto(@PathVariable Long id) {
-        boolean eliminado = productoService.deleteProductById(id);
-        if (eliminado) {
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
+        try {
+            boolean eliminado = productoService.deleteProductById(id);
+            if (eliminado) {
+                return ResponseEntity.noContent().build();
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            e.printStackTrace(); // para logs
+            return ResponseEntity.status(500).build();
         }
     }
 
@@ -217,7 +222,7 @@ public class VendedorProductoController {
                         img.setUrl(imgDto.getUrl());
                         img.setPrincipal(imgDto.isPrincipal());
                         img.setOrden(imgDto.getOrden());
-                        img.setCreatedAt(LocalDateTime.now().toString());
+                        img.setCreatedAt(LocalDateTime.now());
                         return productIMGService.save(img);
                     }).collect(Collectors.toSet());
         }

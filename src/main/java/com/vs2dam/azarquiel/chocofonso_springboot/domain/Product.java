@@ -10,6 +10,7 @@ import org.hibernate.annotations.DynamicUpdate;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -61,10 +62,10 @@ public class Product {
 
     @CreatedDate
     @Column(name = "fecha_creacion", updatable = false)
-    private String fechaCreacion;
+    private LocalDateTime fechaCreacion;
 
     @Column(name = "fecha_modificacion")
-    private String fechaModificacion;
+    private LocalDateTime fechaModificacion;
 
 
 
@@ -93,7 +94,8 @@ public class Product {
     )
     private Set<Category> categories = new HashSet<>();
 
-    @OneToMany(mappedBy = "producto", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "producto", fetch = FetchType.LAZY, cascade =
+            CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private Set<Reviews> valoraciones = new HashSet<>();
 

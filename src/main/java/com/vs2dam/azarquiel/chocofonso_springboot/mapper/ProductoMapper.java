@@ -64,9 +64,7 @@ public class ProductoMapper {
                                 .orden(img.getOrden())
                                 .build())
                         .collect(Collectors.toList()))
-                .categorias(categorias.stream()
-                        .map(Category::getNombre)
-                        .collect(Collectors.toList()))
+
                 .build();
     }
 }

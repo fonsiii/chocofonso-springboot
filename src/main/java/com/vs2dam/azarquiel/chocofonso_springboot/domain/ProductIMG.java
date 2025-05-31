@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 import org.springframework.data.annotation.CreatedDate;
 
+import java.time.LocalDateTime;
+
 @Data
 @Entity
 @Table(name = "producto_imagenes") // Or whatever your table is actually called
@@ -28,5 +30,6 @@ public class ProductIMG {
 
     @CreatedDate
     @Column(name = "fecha_creacion", updatable = false)
-    private String createdAt;
+    private LocalDateTime createdAt;
+
 }
