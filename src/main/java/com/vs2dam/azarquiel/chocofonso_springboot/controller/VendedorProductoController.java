@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -137,7 +138,7 @@ public class VendedorProductoController {
 
     @PostMapping
     @Operation(summary = "Crear un producto nuevo")
-    public ResponseEntity<ProductoResponseDTO> crearProducto(@RequestBody AddProductDTO dto) {
+    public ResponseEntity<ProductoResponseDTO> crearProducto(@Valid @RequestBody AddProductDTO dto) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
 
         // 1. Obtener las categorías a partir de los IDs
