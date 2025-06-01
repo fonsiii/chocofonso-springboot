@@ -33,6 +33,14 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             @Param("count") long count
     );
 
+    @Query("""
+    SELECT p FROM Product p 
+    WHERE p.estado = 'ACTIVO' 
+    AND LOWER(p.marca) = LOWER(:marca)
+""")
+    List<Product> findByMarcaIgnoreCaseAndEstadoActivo(@Param("marca") String marca);
+
+
     // Min precio de productos activos
     @Query("SELECT MIN(p.precioUnidad) FROM Product p WHERE p.estado = 'ACTIVO'")
     Double findMinPrice();
@@ -40,37 +48,37 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query("SELECT MAX(p.precioUnidad) FROM Product p WHERE p.estado = 'ACTIVO'")
     Double findMaxPrice();
 
-    // Filtro combinado por categorías, precio y marca SOLO si producto está activo
     @Query("""
-        SELECT p FROM Product p
-        JOIN p.categories c
-        WHERE p.estado = 'ACTIVO'
-        AND c.id IN :categoryIds
-        AND p.precioUnidad BETWEEN :minPrecio AND :maxPrecio
-        AND (:marca IS NULL OR LOWER(p.marca) = LOWER(:marca))
-        GROUP BY p.id
-        HAVING COUNT(DISTINCT c.id) = :size
-    """)
+    SELECT p FROM Product p
+    JOIN p.categories c
+    WHERE p.estado = 'ACTIVO'
+    AND c.id IN :categoryIds
+    AND p.precioUnidad BETWEEN :minPrecio AND :maxPrecio
+    AND (:marcas IS NULL OR LOWER(p.marca) IN (:marcas))
+    GROUP BY p.id
+    HAVING COUNT(DISTINCT c.id) = :size
+""")
     List<Product> findByCategoriasANDPrecioYMarcaANDEstado(
             @Param("categoryIds") List<Long> categoryIds,
             @Param("minPrecio") Double minPrecio,
             @Param("maxPrecio") Double maxPrecio,
-            @Param("marca") String marca,
+            @Param("marcas") List<String> marcas,
             @Param("size") long size
     );
 
-    // Para búsqueda sin categoría pero con estado activo
+
     @Query("""
-        SELECT p FROM Product p
-        WHERE p.estado = 'ACTIVO'
-        AND p.precioUnidad BETWEEN :min AND :max
-        AND (:marca IS NULL OR LOWER(p.marca) = LOWER(:marca))
-    """)
+    SELECT p FROM Product p
+    WHERE p.estado = 'ACTIVO'
+    AND p.precioUnidad BETWEEN :min AND :max
+    AND (:marcas IS NULL OR LOWER(p.marca) IN (:marcas))
+""")
     List<Product> findByPrecioBetweenAndMarcaAndEstado(
             @Param("min") Double min,
             @Param("max") Double max,
-            @Param("marca") String marca
+            @Param("marcas") List<String> marcas
     );
+
 
     // Marcas únicas de productos activos
     @Query("SELECT DISTINCT LOWER(p.marca) FROM Product p WHERE p.estado = 'ACTIVO'")

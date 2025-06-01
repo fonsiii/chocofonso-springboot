@@ -45,6 +45,14 @@ public class ProductoService {
         product.setMarca(vendedor.getCompanyName());
         return productoRepository.save(product);
     }
+
+    public List<Product> getProductosByMarca(String marca) {
+        if (marca == null || marca.isBlank()) {
+            return Collections.emptyList();
+        }
+        return productoRepository.findByMarcaIgnoreCaseAndEstadoActivo(marca);
+    }
+
     public Product saveProduct(Product producto) {
         return productoRepository.save(producto);
     }
@@ -138,14 +146,32 @@ public class ProductoService {
         return productoRepository.findMaxPrice();
     }
 
-    public List<Product> findByCategoriasPrecioYMarca(List<Long> categoryIds, Double minPrecio, Double maxPrecio, String marca) {
+    public List<Product> findByCategoriasPrecioYMarca(List<Long> categoryIds,
+                                                      Double minPrecio,
+                                                      Double maxPrecio,
+                                                      List<String> marcas) {
+        List<String> marcasNormalizadas = null;
+
+        if (marcas != null) {
+            marcasNormalizadas = marcas.stream()
+                    .filter(m -> m != null && !m.isBlank())
+                    .map(m -> m.trim().toLowerCase())
+                    .collect(Collectors.toList());
+
+            if (marcasNormalizadas.isEmpty()) {
+                // Si la lista filtrada queda vacía, la dejamos en null para que no filtre marcas
+                marcasNormalizadas = null;
+            }
+        }
+
         if (categoryIds == null || categoryIds.isEmpty()) {
-            // Sin categorías -> filtrar solo por precio y marca
-            return productoRepository.findByPrecioBetweenAndMarcaAndEstado(minPrecio, maxPrecio, marca);
+            return productoRepository.findByPrecioBetweenAndMarcaAndEstado(minPrecio, maxPrecio, marcasNormalizadas);
         }
         return productoRepository.findByCategoriasANDPrecioYMarcaANDEstado(
-                categoryIds, minPrecio, maxPrecio, marca, categoryIds.size());
+                categoryIds, minPrecio, maxPrecio, marcasNormalizadas, categoryIds.size());
     }
+
+
 
     public List<String> getAllMarcas() {
         return productoRepository.findAllMarcas();

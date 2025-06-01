@@ -118,6 +118,23 @@ public class ProductsController {
         return ResponseEntity.ok(productosDTO);
     }
 
+    @GetMapping("/marca")
+    @Operation(summary = "Obtener productos por marca")
+    public ResponseEntity<List<ProductoResponseDTO>> getProductosByMarca(@RequestParam String marca) {
+        List<Product> productos = productoService.getProductosByMarca(marca);
+
+        if (productos.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        List<ProductoResponseDTO> productosDTO = productos.stream()
+                .map(ProductoResponseDTO::from)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(productosDTO);
+    }
+
+
     @GetMapping("/precio/rango")
     @Operation(summary = "Obtener rango de precios (min y max) de los productos")
     public ResponseEntity<PrecioRangoDTO> getPrecioRango() {
@@ -128,12 +145,15 @@ public class ProductsController {
     }
 
     @GetMapping("/filtrar")
-    @Operation(summary = "Obtener productos filtrados por categorías, rango de precio y marca")
     public ResponseEntity<List<ProductoResponseDTO>> filtrarProductos(
             @RequestParam(required = false) String categorias,
             @RequestParam Double minPrecio,
             @RequestParam Double maxPrecio,
-            @RequestParam(required = false) String marca) {
+            @RequestParam(required = false) List<String> marcas) {
+
+        if (marcas != null && marcas.isEmpty()) {
+            marcas = null; // Evitar lista vacía, para que no filtre mal
+        }
 
         List<Long> categoriaIds = Collections.emptyList();
         if (categorias != null && !categorias.isEmpty()) {
@@ -142,7 +162,8 @@ public class ProductsController {
                     .collect(Collectors.toList());
         }
 
-        List<Product> productos = productoService.findByCategoriasPrecioYMarca(categoriaIds, minPrecio, maxPrecio, marca);
+        List<Product> productos = productoService.findByCategoriasPrecioYMarca(categoriaIds, minPrecio, maxPrecio, marcas);
+
         if (productos.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
