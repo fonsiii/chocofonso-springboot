@@ -14,6 +14,7 @@ public class CartItemDTO {
     private Long productId;
     private String productName;
     private double precioUnidad;
+    private double precioOferta;
     private String imageUrl;
     private int quantity;
 
@@ -23,6 +24,7 @@ public class CartItemDTO {
         dto.productId = item.getProduct().getId();
         dto.productName = item.getProduct().getNombre();
         dto.precioUnidad = item.getProduct().getPrecioUnidad();
+        dto.precioOferta = item.getProduct().getPrecioOferta() != null ? item.getProduct().getPrecioOferta() : 0.0;
 
         // Buscar la imagen principal, si existe
         dto.imageUrl = item.getProduct().getImages().stream()
