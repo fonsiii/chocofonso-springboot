@@ -7,6 +7,9 @@ import com.vs2dam.azarquiel.chocofonso_springboot.domain.Payment;
 import com.vs2dam.azarquiel.chocofonso_springboot.domain.PaymentItem;
 import com.vs2dam.azarquiel.chocofonso_springboot.domain.Product;
 import com.vs2dam.azarquiel.chocofonso_springboot.domain.User;
+import com.vs2dam.azarquiel.chocofonso_springboot.dto.ClienteDTO;
+import com.vs2dam.azarquiel.chocofonso_springboot.dto.PedidoDeMiMarcaDTO;
+import com.vs2dam.azarquiel.chocofonso_springboot.dto.ProductoPedidoDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.repository.PaymentRepository;
 import com.vs2dam.azarquiel.chocofonso_springboot.repository.PaymentItemRepository;
 import com.vs2dam.azarquiel.chocofonso_springboot.repository.ProductRepository;
@@ -21,7 +24,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -139,6 +145,63 @@ public class PaymentService {
             throw new RuntimeException("Error procesando sesión completada: " + e.getMessage(), e);
         }
     }
+
+    public List<PedidoDeMiMarcaDTO> getPedidosConMisProductos(String emailVendedor) {
+        User vendedor = userRepository.findByEmail(emailVendedor)
+                .orElseThrow(() -> new RuntimeException("Vendedor no encontrado"));
+
+        String marca = vendedor.getCompanyName();
+
+        List<Product> productosMarca = productRepository.findByMarca(marca);
+        if (productosMarca.isEmpty()) return List.of();
+
+        Set<Long> idsProductosMarca = productosMarca.stream()
+                .map(Product::getId)
+                .collect(Collectors.toSet());
+
+        // Cambia esta línea para obtener pagos con items filtrados directamente
+        List<Payment> pagos = paymentRepository.findPaymentsWithItemsByProductoIds(List.copyOf(idsProductosMarca));
+        System.out.println("Número de pagos encontrados: " + pagos.size());
+
+        return pagos.stream().map(payment -> {
+            PedidoDeMiMarcaDTO dto = new PedidoDeMiMarcaDTO();
+            dto.setPaymentId(payment.getId());
+            dto.setEstado(payment.getStatus());
+
+            User comprador = payment.getUser();
+            ClienteDTO usuarioDTO = new ClienteDTO(
+                    comprador.getEmail(),
+                    comprador.getFirstName(),
+                    comprador.getLastName(),
+                    comprador.getPhoneNumber(),
+                    comprador.getBillingAddress(),
+                    comprador.getBillingCity(),
+                    comprador.getBillingPostalCode(),
+                    comprador.getShippingAddress(),
+                    comprador.getShippingCity(),
+                    comprador.getShippingPostalCode()
+            );
+            dto.setComprador(usuarioDTO);
+
+            dto.setTotal(payment.getAmount());
+
+            // Aquí los paymentItems ya están filtrados en la consulta
+            List<ProductoPedidoDTO> productosDTO = payment.getPaymentItems().stream()
+                    .map(item -> {
+                        ProductoPedidoDTO prodDTO = new ProductoPedidoDTO();
+                        prodDTO.setNombre(item.getProducto().getNombre());
+                        prodDTO.setCantidad(item.getQuantity());
+                        prodDTO.setPrecioUnidad(item.getUnitPrice());
+                        return prodDTO;
+                    }).toList();
+
+            dto.setProductos(productosDTO);
+            return dto;
+        }).toList();
+    }
+
+
+
 
     public static class ItemCompra {
         private Long productoId;

@@ -3,6 +3,8 @@ package com.vs2dam.azarquiel.chocofonso_springboot.repository;
 import com.vs2dam.azarquiel.chocofonso_springboot.domain.Payment;
 import com.vs2dam.azarquiel.chocofonso_springboot.domain.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -15,4 +17,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     // Buscar pago por stripePaymentId
     Payment findByStripePaymentId(String stripePaymentId);
+
+    @Query("select distinct p from Payment p join fetch p.paymentItems pi where pi.producto.id in :productoIds")
+    List<Payment> findPaymentsWithItemsByProductoIds(@Param("productoIds") List<Long> productoIds);
+
 }

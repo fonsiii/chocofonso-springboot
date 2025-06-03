@@ -5,14 +5,12 @@ import com.vs2dam.azarquiel.chocofonso_springboot.domain.Product;
 import com.vs2dam.azarquiel.chocofonso_springboot.domain.ProductIMG;
 import com.vs2dam.azarquiel.chocofonso_springboot.domain.User;
 import com.vs2dam.azarquiel.chocofonso_springboot.dto.AddProductDTO;
+import com.vs2dam.azarquiel.chocofonso_springboot.dto.PedidoDeMiMarcaDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.dto.ProductoResponseDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.dto.UserResponseDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.mapper.ProductoMapper;
 import com.vs2dam.azarquiel.chocofonso_springboot.mapper.UserMapper;
-import com.vs2dam.azarquiel.chocofonso_springboot.service.CategoryService;
-import com.vs2dam.azarquiel.chocofonso_springboot.service.ProductIMGService;
-import com.vs2dam.azarquiel.chocofonso_springboot.service.ProductoService;
-import com.vs2dam.azarquiel.chocofonso_springboot.service.VendedorService;
+import com.vs2dam.azarquiel.chocofonso_springboot.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -43,6 +41,8 @@ public class VendedorProductoController {
     private CategoryService categoryService;
     @Autowired
     private ProductIMGService productIMGService;
+    @Autowired
+    private PaymentService paymentService;
 
     @Operation(summary = "Obtener todos los usuarios", description = "Recupera todos los usuarios del sistema.")
     @ApiResponses(value = {
@@ -68,6 +68,19 @@ public class VendedorProductoController {
             return ResponseEntity.status(500).body("Error interno: " + e.getMessage());
         }
     }
+
+    @GetMapping("/mis-pedidos")
+    public ResponseEntity<?> getPedidosConMisProductos() {
+        try {
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            List<PedidoDeMiMarcaDTO> pedidos = paymentService.getPedidosConMisProductos(email);
+            return ResponseEntity.ok(pedidos);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error interno: " + e.getMessage());
+        }
+    }
+
 
 
     @GetMapping("/categorias")
