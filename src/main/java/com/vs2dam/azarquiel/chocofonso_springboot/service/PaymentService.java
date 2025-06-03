@@ -189,6 +189,50 @@ public class PaymentService {
             List<ProductoPedidoDTO> productosDTO = payment.getPaymentItems().stream()
                     .map(item -> {
                         ProductoPedidoDTO prodDTO = new ProductoPedidoDTO();
+                        prodDTO.setId(item.getProducto().getId());
+                        prodDTO.setNombre(item.getProducto().getNombre());
+                        prodDTO.setCantidad(item.getQuantity());
+                        prodDTO.setPrecioUnidad(item.getUnitPrice());
+                        return prodDTO;
+                    }).toList();
+
+            dto.setProductos(productosDTO);
+            return dto;
+        }).toList();
+    }
+
+    public List<PedidoDeMiMarcaDTO> getPedidosByClienteEmail(String emailCliente) {
+        User cliente = userRepository.findByEmail(emailCliente)
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+
+        List<Payment> pagosCliente = paymentRepository.findByUser(cliente);
+
+        return pagosCliente.stream().map(payment -> {
+            PedidoDeMiMarcaDTO dto = new PedidoDeMiMarcaDTO();
+            dto.setPaymentId(payment.getId());
+            dto.setEstado(payment.getStatus());
+
+            // Mismo cliente que solicitó
+            ClienteDTO usuarioDTO = new ClienteDTO(
+                    cliente.getEmail(),
+                    cliente.getFirstName(),
+                    cliente.getLastName(),
+                    cliente.getPhoneNumber(),
+                    cliente.getBillingAddress(),
+                    cliente.getBillingCity(),
+                    cliente.getBillingPostalCode(),
+                    cliente.getShippingAddress(),
+                    cliente.getShippingCity(),
+                    cliente.getShippingPostalCode()
+            );
+            dto.setComprador(usuarioDTO);
+
+            dto.setTotal(payment.getAmount());
+
+            List<ProductoPedidoDTO> productosDTO = payment.getPaymentItems().stream()
+                    .map(item -> {
+                        ProductoPedidoDTO prodDTO = new ProductoPedidoDTO();
+                        prodDTO.setId(item.getProducto().getId());
                         prodDTO.setNombre(item.getProducto().getNombre());
                         prodDTO.setCantidad(item.getQuantity());
                         prodDTO.setPrecioUnidad(item.getUnitPrice());

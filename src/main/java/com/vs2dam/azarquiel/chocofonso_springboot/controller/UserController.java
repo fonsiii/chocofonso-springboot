@@ -1,12 +1,10 @@
 package com.vs2dam.azarquiel.chocofonso_springboot.controller;
 
 import com.vs2dam.azarquiel.chocofonso_springboot.domain.User;
-import com.vs2dam.azarquiel.chocofonso_springboot.dto.RegisterUserDTO;
-import com.vs2dam.azarquiel.chocofonso_springboot.dto.UpdateAddressDTO;
-import com.vs2dam.azarquiel.chocofonso_springboot.dto.UpdateUserDTO;
-import com.vs2dam.azarquiel.chocofonso_springboot.dto.UserResponseDTO;
+import com.vs2dam.azarquiel.chocofonso_springboot.dto.*;
 import com.vs2dam.azarquiel.chocofonso_springboot.mapper.UserMapper;
 import com.vs2dam.azarquiel.chocofonso_springboot.security.JwtTokenUtil;
+import com.vs2dam.azarquiel.chocofonso_springboot.service.PaymentService;
 import com.vs2dam.azarquiel.chocofonso_springboot.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -21,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -36,6 +35,9 @@ public class UserController {
 
     @Autowired
     private JwtTokenUtil jwtTokenUtil;
+
+    @Autowired
+    private PaymentService paymentService;
 
 
 
@@ -170,6 +172,9 @@ public class UserController {
             @ApiResponse(responseCode = "400", description = "Error en los datos de la dirección."),
             @ApiResponse(responseCode = "404", description = "Usuario no encontrado.")
     })
+
+
+
     @PutMapping("/address")
     public ResponseEntity<?> updateAddress(
             @Valid @RequestBody UpdateAddressDTO updateAddressDTO,
@@ -289,5 +294,26 @@ public class UserController {
             }
         }
         return null;
+    }
+
+    @Operation(summary = "Obtener pedidos del cliente autenticado")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Pedidos obtenidos correctamente"),
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
+    @GetMapping("/me/pedidos")
+    public ResponseEntity<?> getPedidosDelCliente() {
+        try {
+            // Obtener email del usuario autenticado
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+
+            // Obtener pedidos del cliente (usa método similar a getPedidosConMisProductos, pero para cliente)
+            List<PedidoDeMiMarcaDTO> pedidos = paymentService.getPedidosByClienteEmail(email);
+
+            return ResponseEntity.ok(pedidos);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error interno: " + e.getMessage());
+        }
     }
 }
