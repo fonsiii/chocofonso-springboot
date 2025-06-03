@@ -92,6 +92,15 @@ public class PaymentService {
         return savedPayment;
     }
 
+    public boolean hasUserPurchasedProduct(Long userId, Long productId) {
+        // Aquí deberías consultar la base de datos si hay un pago con ese userId y productoId.
+        // Por ejemplo, buscar en los items de las órdenes/pagos asociados a ese usuario.
+
+        // Ejemplo pseudo-código:
+        return paymentItemRepository.existsByUserIdAndProductoId(userId, productId);
+    }
+
+
     @Transactional
     public void handleCheckoutSessionCompleted(Session session) {
         try {

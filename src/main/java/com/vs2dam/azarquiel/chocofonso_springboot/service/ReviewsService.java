@@ -3,6 +3,7 @@ package com.vs2dam.azarquiel.chocofonso_springboot.service;
 import com.vs2dam.azarquiel.chocofonso_springboot.domain.*;
 import com.vs2dam.azarquiel.chocofonso_springboot.exception.DuplicateReviewException;
 import com.vs2dam.azarquiel.chocofonso_springboot.exception.ResourceNotFoundException;
+import com.vs2dam.azarquiel.chocofonso_springboot.repository.PaymentItemRepository;
 import com.vs2dam.azarquiel.chocofonso_springboot.repository.ReviewsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,12 +22,22 @@ public class ReviewsService {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private PaymentItemRepository paymentItemRepository;
+
+
     public Reviews crearReview(Long productoId, Long usuarioId,
                                Double estrellas, String comentario) {
 
         if (estrellas < 0 || estrellas > 5) {
             throw new IllegalArgumentException("Estrellas debe estar entre 0 y 5");
         }
+
+        boolean haComprado = paymentItemRepository.existsByUserIdAndProductoId(usuarioId, productoId);
+        if (!haComprado) {
+            throw new RuntimeException("No se puede hacer reseña porque el usuario no ha comprado este producto");
+        }
+
 
         if (reviewsRepository.findByProductoIdAndUsuarioId(productoId, usuarioId).isPresent()) {
             throw new DuplicateReviewException("El usuario ya ha valorado este producto");

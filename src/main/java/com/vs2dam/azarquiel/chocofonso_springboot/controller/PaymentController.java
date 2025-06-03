@@ -20,6 +20,21 @@ public class PaymentController {
     private final PaymentService paymentService;
     private final UserRepository userRepository;
 
+    @GetMapping("/hasPurchased/{productId}")
+    public ResponseEntity<Boolean> hasPurchasedProduct(
+            @PathVariable Long productId,
+            Principal principal
+    ) {
+        String email = principal.getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + email));
+
+        boolean hasPurchased = paymentService.hasUserPurchasedProduct(user.getId(), productId);
+
+        return ResponseEntity.ok(hasPurchased);
+    }
+
+
     @PostMapping
     public ResponseEntity<?> crearPago(
             @RequestBody PaymentRequest request,
