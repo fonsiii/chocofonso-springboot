@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,15 +36,24 @@ public class PaymentService {
     private final ProductRepository productRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-
+    // Método para convertir céntimos a euros
+    private BigDecimal convertCentimosToEuros(Long centimos) {
+        if (centimos == null) {
+            return BigDecimal.ZERO;
+        }
+        return BigDecimal.valueOf(centimos).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+    }
 
     @Transactional
-    public Payment crearPago(User user, String stripePaymentId, Long amount, String currency, String status, String description, List<ItemCompra> items) {
+    public Payment crearPago(User user, String stripePaymentId, Long amountInCentimos, String currency, String status, String description, List<ItemCompra> items) {
+
+        // Convertir céntimos a euros antes de guardar
+        BigDecimal amountInEuros = convertCentimosToEuros(amountInCentimos);
 
         Payment payment = Payment.builder()
                 .user(user)
                 .stripePaymentId(stripePaymentId)
-                .amount(amount)
+                .amount(amountInEuros) // Guardamos en euros, no en céntimos
                 .currency(currency)
                 .status(status)
                 .description(description)
@@ -59,7 +69,7 @@ public class PaymentService {
             Product producto = productRepository.findById(item.getProductoId())
                     .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + item.getProductoId()));
 
-            int stockActual = producto.getStock();  // Asumiendo que el campo stock existe
+            int stockActual = producto.getStock();
             int cantidadComprada = item.getCantidad();
 
             if (stockActual < cantidadComprada) {
@@ -67,7 +77,7 @@ public class PaymentService {
             }
 
             producto.setStock(stockActual - cantidadComprada);
-            productoService.saveProduct(producto);  // Guardar producto con stock actualizado
+            productoService.saveProduct(producto);
 
             PaymentItem paymentItem = PaymentItem.builder()
                     .payment(savedPayment)
@@ -82,13 +92,11 @@ public class PaymentService {
         return savedPayment;
     }
 
-
     @Transactional
     public void handleCheckoutSessionCompleted(Session session) {
         try {
             log.info("Procesando sesión completada: {}", session.getId());
 
-            // ✅ Obtener el userId del metadata
             String userIdStr = session.getMetadata().get("userId");
             if (userIdStr == null) {
                 throw new RuntimeException("userId no presente en metadata");
@@ -98,15 +106,15 @@ public class PaymentService {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + userId));
 
-            // ✅ Obtener los items del metadata
             String itemsJson = session.getMetadata().get("items");
             log.info("Items JSON recibido: {}", itemsJson);
             List<ItemCompra> items = objectMapper.readValue(itemsJson, new TypeReference<>() {});
 
+            // session.getAmountTotal() viene en céntimos desde Stripe
             crearPago(
                     user,
                     session.getId(),
-                    session.getAmountTotal(),
+                    session.getAmountTotal(), // Pasamos céntimos, se convertirán dentro del método
                     session.getCurrency(),
                     "succeeded",
                     session.getMetadata().get("description"),
@@ -123,23 +131,18 @@ public class PaymentService {
         }
     }
 
-
-
     public static class ItemCompra {
         private Long productoId;
         private int cantidad;
 
-        // Constructor por defecto requerido por Jackson
         public ItemCompra() {
         }
 
-        // Constructor opcional para conveniencia
         public ItemCompra(Long productoId, int cantidad) {
             this.productoId = productoId;
             this.cantidad = cantidad;
         }
 
-        // Getters y Setters públicos
         public Long getProductoId() {
             return productoId;
         }
@@ -156,6 +159,4 @@ public class PaymentService {
             this.cantidad = cantidad;
         }
     }
-
-
 }

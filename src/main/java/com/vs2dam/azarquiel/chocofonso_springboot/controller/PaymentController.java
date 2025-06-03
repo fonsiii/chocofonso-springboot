@@ -30,10 +30,12 @@ public class PaymentController {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + email));
 
+        // El amount puede venir en céntimos desde el frontend
+        // El PaymentService se encargará de convertirlo a euros
         Payment payment = paymentService.crearPago(
                 user,
                 request.getStripePaymentId(),
-                request.getAmount(),
+                request.getAmount(), // Puede ser en céntimos o euros según tu implementación
                 request.getCurrency(),
                 request.getStatus(),
                 request.getDescription(),
@@ -47,7 +49,7 @@ public class PaymentController {
     @lombok.Data
     public static class PaymentRequest {
         private String stripePaymentId;
-        private Long amount; // en céntimos
+        private Long amount; // Puede ser en céntimos (se convertirá automáticamente)
         private String currency; // "eur"
         private String status;
         private String description;
