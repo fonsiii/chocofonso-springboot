@@ -7,6 +7,8 @@ import com.stripe.model.Event;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
 import com.vs2dam.azarquiel.chocofonso_springboot.service.PaymentService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,6 +26,12 @@ public class StripeWebhookController {
     @Value("${stripe.webhook.secret}")
     private String endpointSecret;
 
+    @Operation (summary = "Stripe Webhook Handler",
+            description = "Handles Stripe webhook events, specifically for checkout session completion.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Webhook event processed successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid webhook event")
+    })
     @PostMapping("/webhook")
     public ResponseEntity<String> handleStripeEvent(
             @RequestHeader("Stripe-Signature") String sigHeader,

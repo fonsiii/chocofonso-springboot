@@ -144,6 +144,11 @@ public class ProductsController {
         return ResponseEntity.ok(rango);
     }
 
+    @Operation (summary = "Filtrar productos por categorías, precio y marcas")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Productos filtrados correctamente"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "No se encontraron productos con los criterios especificados")
+    })
     @GetMapping("/filtrar")
     public ResponseEntity<List<ProductoResponseDTO>> filtrarProductos(
             @RequestParam(required = false) String categorias,

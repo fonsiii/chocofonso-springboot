@@ -69,6 +69,13 @@ public class VendedorProductoController {
         }
     }
 
+    @Operation(summary = "Obtener pedidos con productos de mi marca")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista de pedidos obtenida correctamente.",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = PedidoDeMiMarcaDTO.class))),
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor.")
+    })
     @GetMapping("/mis-pedidos")
     public ResponseEntity<?> getPedidosConMisProductos() {
         try {
