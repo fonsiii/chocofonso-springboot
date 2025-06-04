@@ -2,6 +2,7 @@ package com.vs2dam.azarquiel.chocofonso_springboot.controller;
 
 import com.vs2dam.azarquiel.chocofonso_springboot.domain.Payment;
 import com.vs2dam.azarquiel.chocofonso_springboot.domain.User;
+import com.vs2dam.azarquiel.chocofonso_springboot.dto.ProductoTopDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.service.PaymentService;
 import com.vs2dam.azarquiel.chocofonso_springboot.service.PaymentService.ItemCompra;
 import com.vs2dam.azarquiel.chocofonso_springboot.repository.UserRepository;
@@ -59,6 +60,12 @@ public class PaymentController {
 
         return ResponseEntity.ok(payment);
     }
+
+    @GetMapping("/productos/top3")
+    public List<ProductoTopDTO> getTop3ProductosMasVendidos() {
+        return paymentService.getTop3ProductosMasVendidos();
+    }
+
 
     // DTO para request de creación de pago
     @lombok.Data

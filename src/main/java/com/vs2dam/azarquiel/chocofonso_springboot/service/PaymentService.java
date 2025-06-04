@@ -10,6 +10,7 @@ import com.vs2dam.azarquiel.chocofonso_springboot.domain.User;
 import com.vs2dam.azarquiel.chocofonso_springboot.dto.ClienteDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.dto.PedidoDeMiMarcaDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.dto.ProductoPedidoDTO;
+import com.vs2dam.azarquiel.chocofonso_springboot.dto.ProductoTopDTO;
 import com.vs2dam.azarquiel.chocofonso_springboot.repository.PaymentRepository;
 import com.vs2dam.azarquiel.chocofonso_springboot.repository.PaymentItemRepository;
 import com.vs2dam.azarquiel.chocofonso_springboot.repository.ProductRepository;
@@ -18,6 +19,7 @@ import lombok.Data;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -243,6 +245,11 @@ public class PaymentService {
             return dto;
         }).toList();
     }
+
+    public List<ProductoTopDTO> getTop3ProductosMasVendidos() {
+        return paymentItemRepository.findTopProductosVendidosConImagenPrincipal(PageRequest.of(0, 3));
+    }
+
 
 
 
